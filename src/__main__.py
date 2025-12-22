@@ -12,9 +12,7 @@ from .truth_cache import ClaimTruthTableCache
 
 def main() -> None:
     """Main CLI entry point."""
-    parser = argparse.ArgumentParser(
-        description="Generate werewolf logic puzzles"
-    )
+    parser = argparse.ArgumentParser(description="Generate werewolf logic puzzles")
     parser.add_argument(
         "--N",
         type=int,
@@ -66,9 +64,9 @@ def main() -> None:
         action="store_true",
         help="Include solution in output",
     )
-    
+
     args = parser.parse_args()
-    
+
     # Create config
     config = GenerationConfig(
         N=args.N,
@@ -76,13 +74,13 @@ def main() -> None:
         claims_per_speaker_max=args.claims_max,
         max_attempts=args.max_attempts,
     )
-    
+
     # Load or build truth cache
     cache_path = Path(args.cache_file)
     if args.rebuild_cache or not cache_path.exists():
         print(f"Building truth cache for N={config.N}...", file=sys.stderr)
         from .generator import build_claim_library
-        
+
         claim_library = build_claim_library(config)
         truth_cache = ClaimTruthTableCache.build_for_claim_library(
             claim_library, config.N
@@ -100,7 +98,7 @@ def main() -> None:
                 )
                 print("Rebuilding cache...", file=sys.stderr)
                 from .generator import build_claim_library
-                
+
                 claim_library = build_claim_library(config)
                 truth_cache = ClaimTruthTableCache.build_for_claim_library(
                     claim_library, config.N
@@ -110,21 +108,21 @@ def main() -> None:
             print(f"Error loading cache: {e}", file=sys.stderr)
             print("Rebuilding cache...", file=sys.stderr)
             from .generator import build_claim_library
-            
+
             claim_library = build_claim_library(config)
             truth_cache = ClaimTruthTableCache.build_for_claim_library(
                 claim_library, config.N
             )
             truth_cache.save_to_json(str(cache_path))
-    
+
     # Generate puzzle
     print("Generating puzzle...", file=sys.stderr)
     puzzle = generate_puzzle(config, truth_cache)
-    
+
     if puzzle is None:
         print("Failed to generate puzzle after max attempts.", file=sys.stderr)
         sys.exit(1)
-    
+
     # Remove solution if not requested
     if not args.show_solution:
         puzzle = puzzle.__class__(
@@ -133,13 +131,13 @@ def main() -> None:
             difficulty_score=puzzle.difficulty_score,
             solution_assignment=None,
         )
-    
+
     # Render puzzle
     if args.output_format == "markdown":
         output = PuzzleRenderer.render_to_markdown(puzzle)
     else:
         output = PuzzleRenderer.render_to_text(puzzle)
-    
+
     # Write output
     if args.output_file:
         with open(args.output_file, "w") as f:
@@ -148,7 +146,9 @@ def main() -> None:
     else:
         print(output)
 
+    # Display difficulty score
+    print(f"Difficulty Score: {puzzle.difficulty_score:.2f}", file=sys.stderr)
+
 
 if __name__ == "__main__":
     main()
-
