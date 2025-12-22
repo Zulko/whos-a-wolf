@@ -34,6 +34,81 @@ from .truth_cache import (
 from .utils import get_default_names
 
 
+def claim_contains_other(
+    claim_a: "Claim",
+    claim_b: "Claim",
+    truth_cache: ClaimTruthTableCache,
+) -> bool:
+    """Check if claim A logically contains claim B.
+    
+    Claim A contains claim B if: whenever A is true, B is also true (A => B).
+    This means A's truth mask must be a subset of B's truth mask.
+    
+    Args:
+        claim_a: The potentially containing claim
+        claim_b: The potentially contained claim
+        truth_cache: Truth table cache
+        
+    Returns:
+        True if claim_a contains claim_b, False otherwise
+    """
+    if claim_a == claim_b:
+        return False  # A claim doesn't contain itself (avoid removing duplicates)
+    
+    mask_a = truth_cache.get_truth_mask(claim_a)
+    mask_b = truth_cache.get_truth_mask(claim_b)
+    
+    # A contains B if: whenever A is true, B is also true
+    # This means: (mask_a & ~mask_b) == 0
+    # In other words: all bits set in mask_a must also be set in mask_b
+    return (mask_a & ~mask_b) == 0
+
+
+def filter_redundant_claims(
+    bundle: list["Claim"],
+    truth_cache: ClaimTruthTableCache,
+) -> list["Claim"]:
+    """Remove redundant claims from a bundle.
+    
+    If claim A contains claim B, remove claim B (the weaker claim).
+    If claim B contains claim A, remove claim A (the weaker claim).
+    
+    Args:
+        bundle: List of claims to filter
+        truth_cache: Truth table cache
+        
+    Returns:
+        Filtered list of claims with redundancies removed
+    """
+    if len(bundle) <= 1:
+        return bundle
+    
+    # Build a list of claims to keep
+    # We'll check each claim against all others
+    to_remove = set()
+    
+    for i, claim_a in enumerate(bundle):
+        if i in to_remove:
+            continue
+        
+        for j, claim_b in enumerate(bundle):
+            if i == j or j in to_remove:
+                continue
+            
+            # Check if claim_a contains claim_b
+            if claim_contains_other(claim_a, claim_b, truth_cache):
+                # claim_a contains claim_b, so remove claim_b (the weaker one)
+                to_remove.add(j)
+            # Check if claim_b contains claim_a
+            elif claim_contains_other(claim_b, claim_a, truth_cache):
+                # claim_b contains claim_a, so remove claim_a (the weaker one)
+                to_remove.add(i)
+                break  # No need to check further for claim_a
+    
+    # Return filtered bundle
+    return [claim for idx, claim in enumerate(bundle) if idx not in to_remove]
+
+
 def choose_target_assignment(config: GenerationConfig) -> tuple[bool, ...]:
     """Choose a random target assignment W_star.
     
@@ -179,11 +254,17 @@ def list_candidate_bundles_for_speaker(
                 if is_wolf:
                     # Wolf: at least one must be false
                     if not all_true:
-                        candidate_bundles.append(bundle_list)
+                        # Filter redundant claims before adding
+                        filtered_bundle = filter_redundant_claims(bundle_list, truth_cache)
+                        if filtered_bundle:  # Only add if bundle is not empty after filtering
+                            candidate_bundles.append(filtered_bundle)
                 else:
                     # Human: all must be true
                     if all_true:
-                        candidate_bundles.append(bundle_list)
+                        # Filter redundant claims before adding
+                        filtered_bundle = filter_redundant_claims(bundle_list, truth_cache)
+                        if filtered_bundle:  # Only add if bundle is not empty after filtering
+                            candidate_bundles.append(filtered_bundle)
         else:
             # Large library: sample randomly
             for _ in range(config.greedy_candidate_pool_size):
@@ -196,10 +277,16 @@ def list_candidate_bundles_for_speaker(
                 
                 if is_wolf:
                     if not all_true:
-                        candidate_bundles.append(bundle_list)
+                        # Filter redundant claims before adding
+                        filtered_bundle = filter_redundant_claims(bundle_list, truth_cache)
+                        if filtered_bundle:  # Only add if bundle is not empty after filtering
+                            candidate_bundles.append(filtered_bundle)
                 else:
                     if all_true:
-                        candidate_bundles.append(bundle_list)
+                        # Filter redundant claims before adding
+                        filtered_bundle = filter_redundant_claims(bundle_list, truth_cache)
+                        if filtered_bundle:  # Only add if bundle is not empty after filtering
+                            candidate_bundles.append(filtered_bundle)
     
     return candidate_bundles
 
@@ -420,11 +507,15 @@ def greedy_assign_claims_until_unique(
     names = get_default_names(N)
     villagers = [Villager(i, names[i]) for i in range(N)]
     
-    # Filter out None bundles (shouldn't happen, but safety check)
-    claims_by_speaker = [
-        bundle if bundle is not None else []
-        for bundle in assigned_bundles
-    ]
+    # Filter out None bundles and redundant claims (shouldn't happen, but safety check)
+    claims_by_speaker = []
+    for bundle in assigned_bundles:
+        if bundle is None:
+            claims_by_speaker.append([])
+        else:
+            # Filter redundant claims one more time before finalizing
+            filtered_bundle = filter_redundant_claims(bundle, truth_cache)
+            claims_by_speaker.append(filtered_bundle)
     
     puzzle = Puzzle(
         villagers=villagers,

@@ -1,7 +1,6 @@
 """Tests for puzzle uniqueness verification."""
 
-import pytest
-from src.generator import generate_puzzle, build_claim_library
+from src.generator import generate_puzzle, build_claim_library, claim_contains_other
 from src.models import GenerationConfig
 from src.solver import PuzzleSolver
 from src.truth_cache import ClaimTruthTableCache
@@ -146,3 +145,48 @@ def test_solver_uniqueness_check():
     # Verify we can find the solution
     solution = PuzzleSolver.find_one_solution(puzzle)
     assert solution is not None, "Puzzle should be satisfiable"
+
+
+def test_generated_puzzle_no_redundant_claims():
+    """Test that generated puzzles don't contain redundant/equivalent claims."""
+    config = GenerationConfig(
+        N=6,
+        claims_per_speaker_min=2,
+        claims_per_speaker_max=3,
+        max_attempts=100,
+    )
+
+    # Build truth cache
+    claim_library = build_claim_library(config)
+    truth_cache = ClaimTruthTableCache.build_for_claim_library(claim_library, config.N)
+
+    # Generate multiple puzzles to increase chance of catching redundancy
+    for run in range(10):
+        puzzle = generate_puzzle(config, truth_cache)
+
+        assert puzzle is not None, f"Failed to generate puzzle on run {run + 1}"
+
+        # Check each speaker's bundle for redundant claims
+        for speaker_idx, claims in enumerate(puzzle.claims_by_speaker):
+            if len(claims) <= 1:
+                continue  # No redundancy possible with 0 or 1 claim
+
+            # Check all pairs of claims in the bundle
+            for i, claim_a in enumerate(claims):
+                for j, claim_b in enumerate(claims):
+                    if i >= j:
+                        continue  # Only check each pair once
+
+                    # Verify that neither claim contains the other
+                    a_contains_b = claim_contains_other(claim_a, claim_b, truth_cache)
+                    b_contains_a = claim_contains_other(claim_b, claim_a, truth_cache)
+
+                    assert not a_contains_b, (
+                        f"Run {run + 1}, Speaker {speaker_idx} ({puzzle.villagers[speaker_idx].name}): "
+                        f"Claim {i} ({claim_a.claim_id}) contains claim {j} ({claim_b.claim_id})"
+                    )
+
+                    assert not b_contains_a, (
+                        f"Run {run + 1}, Speaker {speaker_idx} ({puzzle.villagers[speaker_idx].name}): "
+                        f"Claim {j} ({claim_b.claim_id}) contains claim {i} ({claim_a.claim_id})"
+                    )
