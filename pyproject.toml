@@ -1,0 +1,16 @@
+[project]
+name = "werewolf"
+version = "0.1.0"
+description = "A werewolf puzzle solver and generator"
+requires-python = ">=3.10"
+dependencies = [
+    "z3-solver",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = []
+
