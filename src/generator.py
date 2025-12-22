@@ -256,14 +256,16 @@ def list_candidate_bundles_for_speaker(
                     if not all_true:
                         # Filter redundant claims before adding
                         filtered_bundle = filter_redundant_claims(bundle_list, truth_cache)
-                        if filtered_bundle:  # Only add if bundle is not empty after filtering
+                        # Only add if bundle meets minimum size requirement after filtering
+                        if len(filtered_bundle) >= min_claims:
                             candidate_bundles.append(filtered_bundle)
                 else:
                     # Human: all must be true
                     if all_true:
                         # Filter redundant claims before adding
                         filtered_bundle = filter_redundant_claims(bundle_list, truth_cache)
-                        if filtered_bundle:  # Only add if bundle is not empty after filtering
+                        # Only add if bundle meets minimum size requirement after filtering
+                        if len(filtered_bundle) >= min_claims:
                             candidate_bundles.append(filtered_bundle)
         else:
             # Large library: sample randomly
@@ -279,13 +281,15 @@ def list_candidate_bundles_for_speaker(
                     if not all_true:
                         # Filter redundant claims before adding
                         filtered_bundle = filter_redundant_claims(bundle_list, truth_cache)
-                        if filtered_bundle:  # Only add if bundle is not empty after filtering
+                        # Only add if bundle meets minimum size requirement after filtering
+                        if len(filtered_bundle) >= min_claims:
                             candidate_bundles.append(filtered_bundle)
                 else:
                     if all_true:
                         # Filter redundant claims before adding
                         filtered_bundle = filter_redundant_claims(bundle_list, truth_cache)
-                        if filtered_bundle:  # Only add if bundle is not empty after filtering
+                        # Only add if bundle meets minimum size requirement after filtering
+                        if len(filtered_bundle) >= min_claims:
                             candidate_bundles.append(filtered_bundle)
     
     return candidate_bundles
@@ -412,6 +416,10 @@ def greedy_assign_claims_until_unique(
             
             # Try each candidate bundle
             for bundle in candidate_bundles:
+                # Ensure bundle meets minimum size requirement
+                if len(bundle) < config.claims_per_speaker_min:
+                    continue
+                
                 compat_mask = compute_speaker_compatibility_mask(
                     speaker_idx,
                     bundle,
@@ -468,6 +476,10 @@ def greedy_assign_claims_until_unique(
             
             # Try each candidate bundle
             for bundle in candidate_bundles:
+                # Ensure bundle meets minimum size requirement
+                if len(bundle) < config.claims_per_speaker_min:
+                    continue
+                
                 compat_mask = compute_speaker_compatibility_mask(
                     speaker_idx,
                     bundle,
@@ -509,13 +521,23 @@ def greedy_assign_claims_until_unique(
     
     # Filter out None bundles and redundant claims (shouldn't happen, but safety check)
     claims_by_speaker = []
+    min_claims = config.claims_per_speaker_min
     for bundle in assigned_bundles:
         if bundle is None:
-            claims_by_speaker.append([])
+            # This shouldn't happen, but if it does, we can't meet the minimum requirement
+            return None
         else:
             # Filter redundant claims one more time before finalizing
             filtered_bundle = filter_redundant_claims(bundle, truth_cache)
+            # Ensure bundle still meets minimum size requirement after filtering
+            if len(filtered_bundle) < min_claims:
+                return None  # Bundle doesn't meet minimum requirement
             claims_by_speaker.append(filtered_bundle)
+    
+    # Final verification: ensure all villagers have at least min_claims
+    for i, claims in enumerate(claims_by_speaker):
+        if len(claims) < min_claims:
+            return None  # Villager doesn't meet minimum requirement
     
     puzzle = Puzzle(
         villagers=villagers,

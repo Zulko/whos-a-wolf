@@ -190,3 +190,31 @@ def test_generated_puzzle_no_redundant_claims():
                         f"Run {run + 1}, Speaker {speaker_idx} ({puzzle.villagers[speaker_idx].name}): "
                         f"Claim {j} ({claim_b.claim_id}) contains claim {i} ({claim_a.claim_id})"
                     )
+
+
+def test_generated_puzzle_minimum_claims_per_speaker():
+    """Test that all villagers have at least the minimum number of claims."""
+    config = GenerationConfig(
+        N=6,
+        claims_per_speaker_min=2,
+        claims_per_speaker_max=3,
+        max_attempts=100,
+    )
+
+    # Build truth cache
+    claim_library = build_claim_library(config)
+    truth_cache = ClaimTruthTableCache.build_for_claim_library(claim_library, config.N)
+
+    # Generate multiple puzzles to increase chance of catching issues
+    for run in range(10):
+        puzzle = generate_puzzle(config, truth_cache)
+
+        assert puzzle is not None, f"Failed to generate puzzle on run {run + 1}"
+
+        # Verify all villagers have at least the minimum number of claims
+        min_claims = config.claims_per_speaker_min
+        for i, claims in enumerate(puzzle.claims_by_speaker):
+            assert len(claims) >= min_claims, (
+                f"Run {run + 1}: Villager {i} ({puzzle.villagers[i].name}) has only {len(claims)} "
+                f"claim(s), but minimum is {min_claims}"
+            )
