@@ -305,7 +305,7 @@ def greedy_assign_claims_until_unique(
     assigned_bundles: list[list["Claim"] | None] = [None] * N
     unassigned_speakers = list(range(N))
     
-    # Greedy assignment loop
+    # Phase 1: Greedy assignment until uniqueness is achieved
     while unassigned_speakers and remaining_mask != (1 << W_star_index):
         best_speaker = None
         best_bundle = None
@@ -361,6 +361,60 @@ def greedy_assign_claims_until_unique(
     # Check if we achieved uniqueness (only W_star_index bit set)
     if remaining_mask != (1 << W_star_index):
         return None  # Not unique yet
+    
+    # Phase 2: Assign bundles to remaining speakers while maintaining uniqueness
+    # Once uniqueness is achieved, any bundle consistent with W_star will maintain it
+    while unassigned_speakers:
+        best_speaker = None
+        best_bundle = None
+        
+        # Try each unassigned speaker
+        for speaker_idx in unassigned_speakers:
+            candidate_bundles = candidate_bundles_by_speaker[speaker_idx]
+            
+            # Sample a subset if too many
+            if len(candidate_bundles) > config.greedy_candidate_pool_size:
+                candidate_bundles = random.sample(
+                    candidate_bundles,
+                    config.greedy_candidate_pool_size
+                )
+            
+            # Try each candidate bundle
+            for bundle in candidate_bundles:
+                compat_mask = compute_speaker_compatibility_mask(
+                    speaker_idx,
+                    bundle,
+                    human_mask_by_speaker[speaker_idx],
+                    wolf_mask_by_speaker[speaker_idx],
+                    truth_cache,
+                )
+                
+                # New remaining mask after adding this bundle
+                new_mask = remaining_mask & compat_mask
+                
+                # Check if W_star is still possible (this maintains uniqueness since
+                # remaining_mask already only contains W_star_index)
+                if new_mask & (1 << W_star_index):
+                    # This bundle is consistent with W_star, use it
+                    best_speaker = speaker_idx
+                    best_bundle = bundle
+                    remaining_mask = new_mask
+                    break  # Found a valid bundle for this speaker
+            
+            if best_speaker is not None:
+                break  # Found a bundle, assign it
+        
+        # If no bundle found that keeps W_star, fail
+        if best_speaker is None:
+            return None
+        
+        # Assign the bundle
+        assigned_bundles[best_speaker] = best_bundle
+        unassigned_speakers.remove(best_speaker)
+    
+    # Final check: ensure uniqueness is maintained
+    if remaining_mask != (1 << W_star_index):
+        return None  # Uniqueness lost
     
     # Build puzzle
     names = get_default_names(N)
