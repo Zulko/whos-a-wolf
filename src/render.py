@@ -88,8 +88,13 @@ class PuzzleRenderer:
             lines.append(f"### {villager.name}")
             lines.append("")
             names = [v.name for v in puzzle.villagers]
-            for i, claim in enumerate(claims, 1):
-                lines.append(f"{i}. {claim.to_english(names)}")
+            if len(claims) == 1:
+                # Single claim: use quote format
+                lines.append(f"> {claims[0].to_english(names)}")
+            else:
+                # Multiple claims: use numbered list
+                for i, claim in enumerate(claims, 1):
+                    lines.append(f"{i}. {claim.to_english(names)}")
             lines.append("")
         
         lines.append("---")
