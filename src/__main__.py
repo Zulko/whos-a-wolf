@@ -64,6 +64,23 @@ def main() -> None:
         action="store_true",
         help="Include solution in output",
     )
+    parser.add_argument(
+        "--has-minion",
+        action="store_true",
+        help="Enable minion mode: exactly one non-werewolf will be a minion who lies",
+    )
+    parser.add_argument(
+        "--min-werewolves",
+        type=int,
+        default=None,
+        help="Minimum number of werewolves in the puzzle (default: no minimum)",
+    )
+    parser.add_argument(
+        "--max-werewolves",
+        type=int,
+        default=None,
+        help="Maximum number of werewolves in the puzzle (default: no maximum)",
+    )
 
     args = parser.parse_args()
 
@@ -73,6 +90,9 @@ def main() -> None:
         claims_per_speaker_min=args.claims_min,
         claims_per_speaker_max=args.claims_max,
         max_attempts=args.max_attempts,
+        has_minion=args.has_minion,
+        min_werewolves=args.min_werewolves,
+        max_werewolves=args.max_werewolves,
     )
 
     # Load or build truth cache
@@ -130,6 +150,7 @@ def main() -> None:
             claims_by_speaker=puzzle.claims_by_speaker,
             difficulty_score=puzzle.difficulty_score,
             solution_assignment=None,
+            minion_assignment=None,
         )
 
     # Render puzzle

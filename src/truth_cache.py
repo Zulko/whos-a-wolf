@@ -71,6 +71,48 @@ def compute_human_wolf_masks(N: int) -> tuple[list[int], list[int]]:
     return human_mask_by_speaker, wolf_mask_by_speaker
 
 
+def compute_minion_masks(N: int, M_star: tuple[bool, ...]) -> list[int]:
+    """Precompute masks for minion assignments per speaker.
+    
+    Args:
+        N: Number of villagers
+        M_star: Minion assignment tuple (M_star[i] = True means villager i is a minion)
+        
+    Returns:
+        List of length N, where mask[i] is a bitmask of assignments
+        where villager i is a minion according to M_star.
+        
+        Each mask is a bitmask where bit j is set if assignment j has
+        villager i as a minion (based on M_star).
+        
+    Note:
+        This function computes masks assuming M_star is fixed. The mask
+        represents which assignments are compatible with villager i being
+        a minion according to M_star.
+    """
+    num_assignments = 1 << N
+    minion_mask_by_speaker = []
+    
+    for speaker_index in range(N):
+        minion_mask = 0
+        
+        # If this speaker is a minion in M_star, all assignments are compatible
+        # (since M_star is fixed, we're checking compatibility)
+        if M_star[speaker_index]:
+            # All assignments where this speaker is NOT a werewolf are compatible
+            for assignment_idx in range(num_assignments):
+                assignment = index_to_assignment(assignment_idx, N)
+                if not assignment[speaker_index]:  # Not a werewolf
+                    minion_mask |= 1 << assignment_idx
+        else:
+            # This speaker is not a minion, so no assignments have them as minion
+            minion_mask = 0
+        
+        minion_mask_by_speaker.append(minion_mask)
+    
+    return minion_mask_by_speaker
+
+
 class ClaimTruthTableCache:
     """Cache of truth masks for claims."""
     

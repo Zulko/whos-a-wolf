@@ -27,6 +27,7 @@ from .truth_cache import (
     ClaimTruthTableCache,
     assignment_to_index,
     compute_human_wolf_masks,
+    compute_minion_masks,
     index_to_assignment,
 )
 from .utils import get_default_names
@@ -160,14 +161,18 @@ def filter_redundant_claims(
     return [claim for idx, claim in enumerate(bundle) if idx not in to_remove]
 
 
-def choose_target_assignment(config: GenerationConfig) -> tuple[bool, ...]:
-    """Choose a random target assignment W_star.
+def choose_target_assignment(
+    config: GenerationConfig,
+) -> tuple[tuple[bool, ...], tuple[bool, ...]]:
+    """Choose a random target assignment W_star and M_star.
 
     Args:
         config: Generation configuration
 
     Returns:
-        Tuple of booleans representing W[0..N-1]
+        Tuple of (W_star, M_star) where:
+        - W_star: Tuple of booleans representing W[0..N-1] (werewolf assignment)
+        - M_star: Tuple of booleans representing M[0..N-1] (minion assignment)
     """
     N = config.N
 
@@ -184,11 +189,30 @@ def choose_target_assignment(config: GenerationConfig) -> tuple[bool, ...]:
                 valid_assignments.append(assignment)
 
         if valid_assignments:
-            return random.choice(valid_assignments)
+            W_star = random.choice(valid_assignments)
+        else:
+            # Fallback: choose uniformly at random
+            assignment_idx = random.randint(0, (1 << N) - 1)
+            W_star = index_to_assignment(assignment_idx, N)
+    else:
+        # Otherwise, choose uniformly at random
+        assignment_idx = random.randint(0, (1 << N) - 1)
+        W_star = index_to_assignment(assignment_idx, N)
 
-    # Otherwise, choose uniformly at random
-    assignment_idx = random.randint(0, (1 << N) - 1)
-    return index_to_assignment(assignment_idx, N)
+    # Generate minion assignment if enabled
+    if config.has_minion:
+        # Select exactly one non-werewolf to be the minion
+        non_werewolves = [i for i in range(N) if not W_star[i]]
+        if not non_werewolves:
+            # No non-werewolves available, return all False for minions
+            M_star = tuple(False for _ in range(N))
+        else:
+            minion_index = random.choice(non_werewolves)
+            M_star = tuple(i == minion_index for i in range(N))
+    else:
+        M_star = tuple(False for _ in range(N))
+
+    return (W_star, M_star)
 
 
 def build_claim_library(config: GenerationConfig) -> list["Claim"]:
@@ -211,7 +235,7 @@ def build_claim_library(config: GenerationConfig) -> list["Claim"]:
         ExactlyOne,
         Neither,
     ]
-    
+
     # Non-symmetrical relationships: create for all ordered pairs
     non_symmetrical_classes = [
         IfAThenB,
@@ -223,16 +247,16 @@ def build_claim_library(config: GenerationConfig) -> list["Claim"]:
         for b in range(a, N):
             if a == b and config.forbid_self_reference:
                 continue
-            
+
             for claim_class in symmetrical_classes:
                 claims.append(claim_class(a, b))
-    
+
     # Create non-symmetrical relationship claims (all ordered pairs)
     for a in range(N):
         for b in range(N):
             if a == b and config.forbid_self_reference:
                 continue
-            
+
             for claim_class in non_symmetrical_classes:
                 claims.append(claim_class(a, b))
 
@@ -270,15 +294,17 @@ def build_claim_library(config: GenerationConfig) -> list["Claim"]:
 def list_candidate_bundles_for_speaker(
     speaker_index: int,
     W_star: tuple[bool, ...],
+    M_star: tuple[bool, ...],
     claim_library: list["Claim"],
     truth_cache: ClaimTruthTableCache,
     config: GenerationConfig,
 ) -> list[list["Claim"]]:
-    """List candidate claim bundles for a speaker consistent with W_star.
+    """List candidate claim bundles for a speaker consistent with W_star and M_star.
 
     Args:
         speaker_index: Index of the speaker
-        W_star: Target assignment
+        W_star: Target werewolf assignment
+        M_star: Target minion assignment
         claim_library: Library of available claims
         truth_cache: Truth table cache
         config: Generation configuration
@@ -309,8 +335,10 @@ def list_candidate_bundles_for_speaker(
 
     # Determine what the bundle must satisfy
     # If speaker is human: all claims must be true
-    # If speaker is wolf: at least one claim must be false
+    # If speaker is wolf or minion: at least one claim must be false
     is_wolf = W_star[speaker_index]
+    is_minion = M_star[speaker_index]
+    can_lie = is_wolf or is_minion
 
     candidate_bundles = []
     min_claims = config.claims_per_speaker_min
@@ -328,10 +356,10 @@ def list_candidate_bundles_for_speaker(
                     claim.evaluate_on_assignment(W_star) for claim in bundle_list
                 )
 
-                if is_wolf:
-                    # Wolf: at least one must be false
+                if can_lie:
+                    # Wolf or minion: at least one must be false
                     if not all_true:
-                        # Filter out bundles with contradictory claims (would make it obvious they're a werewolf)
+                        # Filter out bundles with contradictory claims (would make it obvious they're a werewolf/minion)
                         if bundle_has_contradictory_claims(bundle_list, truth_cache):
                             continue
                         # Filter redundant claims before adding
@@ -360,9 +388,9 @@ def list_candidate_bundles_for_speaker(
                     claim.evaluate_on_assignment(W_star) for claim in bundle_list
                 )
 
-                if is_wolf:
+                if can_lie:
                     if not all_true:
-                        # Filter out bundles with contradictory claims (would make it obvious they're a werewolf)
+                        # Filter out bundles with contradictory claims (would make it obvious they're a werewolf/minion)
                         if bundle_has_contradictory_claims(bundle_list, truth_cache):
                             continue
                         # Filter redundant claims before adding
@@ -429,18 +457,22 @@ def compute_speaker_compatibility_mask(
     bundle: list["Claim"],
     human_mask: int,
     wolf_mask: int,
+    minion_mask: int | None,
     truth_cache: ClaimTruthTableCache,
 ) -> int:
     """Compute compatibility mask for a speaker with a given bundle.
 
     An assignment is compatible if it satisfies the truthfulness rule:
-    AND(claims) == NOT(W[speaker])
+    - Humans: AND(claims) == True
+    - Werewolves and minions: AND(claims) == False
+    - So: AND(claims) == NOT(W[speaker]) AND NOT(M[speaker])
 
     Args:
         speaker_index: Index of the speaker
         bundle: List of claims made by the speaker
         human_mask: Precomputed mask of assignments where speaker is human
         wolf_mask: Precomputed mask of assignments where speaker is wolf
+        minion_mask: Precomputed mask of assignments where speaker is minion (None if minions disabled)
         truth_cache: Truth table cache
 
     Returns:
@@ -451,17 +483,24 @@ def compute_speaker_compatibility_mask(
     num_assignments = 1 << N
     all_assignments_mask = (1 << num_assignments) - 1
 
-    # Humans: must be in bundle_all_true_mask
-    # Wolves: must be in NOT bundle_all_true_mask
-    compat_mask = (human_mask & bundle_all_true_mask) | (
-        wolf_mask & (all_assignments_mask & (~bundle_all_true_mask))
-    )
+    if minion_mask is not None:
+        # Humans: must be in bundle_all_true_mask
+        # Wolves and minions: must be in NOT bundle_all_true_mask
+        compat_mask = (human_mask & bundle_all_true_mask) | (
+            (wolf_mask | minion_mask) & (all_assignments_mask & (~bundle_all_true_mask))
+        )
+    else:
+        # Original logic: Humans tell truth, wolves lie
+        compat_mask = (human_mask & bundle_all_true_mask) | (
+            wolf_mask & (all_assignments_mask & (~bundle_all_true_mask))
+        )
 
     return compat_mask
 
 
 def greedy_assign_claims_until_unique(
     W_star: tuple[bool, ...],
+    M_star: tuple[bool, ...],
     candidate_bundles_by_speaker: list[list[list["Claim"]]],
     truth_cache: ClaimTruthTableCache,
     config: GenerationConfig,
@@ -469,7 +508,8 @@ def greedy_assign_claims_until_unique(
     """Greedily assign claim bundles until uniqueness is achieved.
 
     Args:
-        W_star: Target assignment
+        W_star: Target werewolf assignment
+        M_star: Target minion assignment
         candidate_bundles_by_speaker: List of candidate bundles for each speaker
         truth_cache: Truth table cache
         config: Generation configuration
@@ -484,6 +524,11 @@ def greedy_assign_claims_until_unique(
 
     # Precompute human/wolf masks
     human_mask_by_speaker, wolf_mask_by_speaker = compute_human_wolf_masks(N)
+
+    # Precompute minion masks if minions are enabled
+    minion_mask_by_speaker = None
+    if config.has_minion:
+        minion_mask_by_speaker = compute_minion_masks(N, M_star)
 
     # Track remaining possible assignments
     remaining_mask = all_assignments_mask
@@ -515,11 +560,17 @@ def greedy_assign_claims_until_unique(
                 if len(bundle) < config.claims_per_speaker_min:
                     continue
 
+                minion_mask = (
+                    minion_mask_by_speaker[speaker_idx]
+                    if minion_mask_by_speaker is not None
+                    else None
+                )
                 compat_mask = compute_speaker_compatibility_mask(
                     speaker_idx,
                     bundle,
                     human_mask_by_speaker[speaker_idx],
                     wolf_mask_by_speaker[speaker_idx],
+                    minion_mask,
                     truth_cache,
                 )
 
@@ -574,11 +625,17 @@ def greedy_assign_claims_until_unique(
                 if len(bundle) < config.claims_per_speaker_min:
                     continue
 
+                minion_mask = (
+                    minion_mask_by_speaker[speaker_idx]
+                    if minion_mask_by_speaker is not None
+                    else None
+                )
                 compat_mask = compute_speaker_compatibility_mask(
                     speaker_idx,
                     bundle,
                     human_mask_by_speaker[speaker_idx],
                     wolf_mask_by_speaker[speaker_idx],
+                    minion_mask,
                     truth_cache,
                 )
 
@@ -637,6 +694,7 @@ def greedy_assign_claims_until_unique(
         villagers=villagers,
         claims_by_speaker=claims_by_speaker,
         solution_assignment=W_star,
+        minion_assignment=M_star if config.has_minion else None,
     )
 
     return puzzle
@@ -656,8 +714,8 @@ def generate_puzzle(
         Puzzle if successful, None if generation failed after max_attempts
     """
     for attempt in range(config.max_attempts):
-        # Step 1: Choose target assignment
-        W_star = choose_target_assignment(config)
+        # Step 1: Choose target assignment (both werewolf and minion)
+        W_star, M_star = choose_target_assignment(config)
 
         # Step 2: Build claim library
         claim_library = build_claim_library(config)
@@ -668,6 +726,7 @@ def generate_puzzle(
             bundles = list_candidate_bundles_for_speaker(
                 speaker_idx,
                 W_star,
+                M_star,
                 claim_library,
                 truth_cache,
                 config,
@@ -677,6 +736,7 @@ def generate_puzzle(
         # Step 4: Greedy assignment
         puzzle = greedy_assign_claims_until_unique(
             W_star,
+            M_star,
             candidate_bundles_by_speaker,
             truth_cache,
             config,

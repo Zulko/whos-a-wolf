@@ -31,8 +31,15 @@ class PuzzleRenderer:
             lines.append(f"  {villager.index + 1}. {villager.name}")
         
         lines.append("")
-        lines.append("Each villager is either a Human (always tells the truth)")
-        lines.append("or a Werewolf (at least one thing they say is wrong).")
+        has_minion = puzzle.minion_assignment is not None
+        if has_minion:
+            lines.append("Each villager is either a Human (always tells the truth),")
+            lines.append("a Werewolf (at least one thing they say is wrong),")
+            lines.append("or a Minion (not a werewolf, but at least one thing they say is wrong).")
+            lines.append("There is exactly one minion among the non-werewolves.")
+        else:
+            lines.append("Each villager is either a Human (always tells the truth)")
+            lines.append("or a Werewolf (at least one thing they say is wrong).")
         lines.append("")
         lines.append("The villagers make the following claims:")
         lines.append("")
@@ -74,8 +81,15 @@ class PuzzleRenderer:
             lines.append(f"- **{villager.name}**")
         
         lines.append("")
-        lines.append("Each villager is either a **Human** (always tells the truth)")
-        lines.append("or a **Werewolf** (at least one thing they say is wrong).")
+        has_minion = puzzle.minion_assignment is not None
+        if has_minion:
+            lines.append("Each villager is either a **Human** (always tells the truth),")
+            lines.append("a **Werewolf** (at least one thing they say is wrong),")
+            lines.append("or a **Minion** (not a werewolf, but at least one thing they say is wrong).")
+            lines.append("There is exactly one minion among the non-werewolves.")
+        else:
+            lines.append("Each villager is either a **Human** (always tells the truth)")
+            lines.append("or a **Werewolf** (at least one thing they say is wrong).")
         lines.append("")
         lines.append("## Claims")
         lines.append("")
@@ -118,6 +132,18 @@ class PuzzleRenderer:
                     lines.append(f"- {name}")
             else:
                 lines.append("There are no werewolves - all villagers are human!")
+            
+            if puzzle.minion_assignment:
+                minions = [
+                    puzzle.villagers[i].name
+                    for i, is_minion in enumerate(puzzle.minion_assignment)
+                    if is_minion
+                ]
+                if minions:
+                    lines.append("")
+                    lines.append("The minion is:")
+                    for name in minions:
+                        lines.append(f"- {name}")
         
         return "\n".join(lines)
 

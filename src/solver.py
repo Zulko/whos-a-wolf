@@ -27,8 +27,22 @@ class PuzzleSolver:
         # Create boolean variables for each villager
         W_vars = [z3.Bool(f"W{i}") for i in range(N)]
         
+        # Create boolean variables for minions if minion_assignment is provided
+        M_vars = None
+        if puzzle.minion_assignment is not None:
+            M_vars = [z3.Bool(f"M{i}") for i in range(N)]
+            
+            # Constraint: exactly one minion
+            solver.add(sum(z3.If(M_vars[i], 1, 0) for i in range(N)) == 1)
+            
+            # Constraint: minions are not werewolves (M[i] => NOT W[i])
+            for i in range(N):
+                solver.add(z3.Implies(M_vars[i], z3.Not(W_vars[i])))
+        
         # For each speaker, add the truthfulness constraint:
-        # AND(claims_by_speaker[i]) == NOT(W[i])
+        # Humans tell truth: AND(claims_by_speaker[i]) == True
+        # Werewolves and minions lie: AND(claims_by_speaker[i]) == False
+        # So: all_claims_true == NOT(W[i]) AND NOT(M[i])
         for i, claims in enumerate(puzzle.claims_by_speaker):
             if not claims:
                 continue
@@ -37,8 +51,13 @@ class PuzzleSolver:
             claim_exprs = [claim.to_solver_expr(W_vars) for claim in claims]
             all_claims_true = z3.And(*claim_exprs) if len(claim_exprs) > 1 else claim_exprs[0]
             
-            # Constraint: all_claims_true == NOT(W[i])
-            solver.add(all_claims_true == z3.Not(W_vars[i]))
+            if M_vars is not None:
+                # Constraint: all_claims_true == NOT(W[i]) AND NOT(M[i])
+                # This means: humans tell truth, werewolves and minions lie
+                solver.add(all_claims_true == z3.And(z3.Not(W_vars[i]), z3.Not(M_vars[i])))
+            else:
+                # Original constraint: all_claims_true == NOT(W[i])
+                solver.add(all_claims_true == z3.Not(W_vars[i]))
         
         return solver
     
@@ -66,6 +85,39 @@ class PuzzleSolver:
         )
         
         return assignment
+    
+    @staticmethod
+    def find_one_solution_with_minion(puzzle: "Puzzle") -> tuple[tuple[bool, ...], tuple[bool, ...]] | None:
+        """Find one solution to the puzzle including minion assignment.
+        
+        Args:
+            puzzle: The puzzle to solve
+            
+        Returns:
+            A tuple of (werewolf_assignment, minion_assignment), or None if unsatisfiable
+        """
+        solver = PuzzleSolver.build_solver(puzzle)
+        
+        if solver.check() != z3.sat:
+            return None
+        
+        model = solver.model()
+        N = len(puzzle.villagers)
+        W_vars = [z3.Bool(f"W{i}") for i in range(N)]
+        
+        werewolf_assignment = tuple(
+            z3.is_true(model[W_vars[i]]) for i in range(N)
+        )
+        
+        if puzzle.minion_assignment is not None:
+            M_vars = [z3.Bool(f"M{i}") for i in range(N)]
+            minion_assignment = tuple(
+                z3.is_true(model[M_vars[i]]) for i in range(N)
+            )
+        else:
+            minion_assignment = tuple(False for _ in range(N))
+        
+        return (werewolf_assignment, minion_assignment)
     
     @staticmethod
     def check_uniqueness_and_difficulty(
@@ -107,12 +159,22 @@ class PuzzleSolver:
         W_vars = [z3.Bool(f"W{i}") for i in range(N)]
         
         # Build blocking constraint: assignment != found_model
+        # Need to block both werewolf and minion assignments if minions are enabled
         blocking_constraints = []
         for i in range(N):
             if z3.is_true(model[W_vars[i]]):
                 blocking_constraints.append(z3.Not(W_vars[i]))
             else:
                 blocking_constraints.append(W_vars[i])
+        
+        # If minions are enabled, also block minion assignment
+        if puzzle.minion_assignment is not None:
+            M_vars = [z3.Bool(f"M{i}") for i in range(N)]
+            for i in range(N):
+                if z3.is_true(model[M_vars[i]]):
+                    blocking_constraints.append(z3.Not(M_vars[i]))
+                else:
+                    blocking_constraints.append(M_vars[i])
         
         # Add blocking constraint and check for another solution
         solver.add(z3.Or(*blocking_constraints))
@@ -193,7 +255,7 @@ class PuzzleSolver:
         truth_cache: "ClaimTruthTableCache",
     ) -> float:
         """Estimate difficulty using truth cache bitmask operations."""
-        from .truth_cache import compute_human_wolf_masks
+        from .truth_cache import compute_human_wolf_masks, compute_minion_masks
         
         N = len(puzzle.villagers)
         num_assignments = 1 << N
@@ -201,6 +263,11 @@ class PuzzleSolver:
         
         # Precompute human/wolf masks
         human_mask_by_speaker, wolf_mask_by_speaker = compute_human_wolf_masks(N)
+        
+        # Precompute minion masks if minions are enabled
+        minion_mask_by_speaker = None
+        if puzzle.minion_assignment is not None:
+            minion_mask_by_speaker = compute_minion_masks(N, puzzle.minion_assignment)
         
         # Track remaining assignments as we add constraints incrementally
         remaining_mask = all_assignments_mask
@@ -220,11 +287,18 @@ class PuzzleSolver:
                 truth_mask = truth_cache.get_truth_mask(claim)
                 bundle_all_true_mask &= truth_mask
             
-            # Speaker compatibility: AND(claims) == NOT(W[speaker])
-            compat_mask = (
-                (human_mask_by_speaker[speaker_idx] & bundle_all_true_mask) |
-                (wolf_mask_by_speaker[speaker_idx] & (all_assignments_mask & (~bundle_all_true_mask)))
-            )
+            # Speaker compatibility: AND(claims) == NOT(W[speaker]) AND NOT(M[speaker])
+            if minion_mask_by_speaker is not None:
+                minion_mask = minion_mask_by_speaker[speaker_idx]
+                compat_mask = (
+                    (human_mask_by_speaker[speaker_idx] & bundle_all_true_mask) |
+                    ((wolf_mask_by_speaker[speaker_idx] | minion_mask) & (all_assignments_mask & (~bundle_all_true_mask)))
+                )
+            else:
+                compat_mask = (
+                    (human_mask_by_speaker[speaker_idx] & bundle_all_true_mask) |
+                    (wolf_mask_by_speaker[speaker_idx] & (all_assignments_mask & (~bundle_all_true_mask)))
+                )
             
             # Update remaining mask
             assignments_before = bin(remaining_mask).count("1")
