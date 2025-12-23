@@ -14,7 +14,6 @@ from .claims import (
     AtLeastOne,
     AtMostKWerewolves,
     BothOrNeither,
-    CountClaim,
     ExactlyKWerewolves,
     ExactlyOne,
     EvenNumberOfWerewolves,
@@ -22,7 +21,6 @@ from .claims import (
     IfNotAThenB,
     Neither,
     OddNumberOfWerewolves,
-    RelationshipClaim,
 )
 from .models import GenerationConfig, Puzzle, Villager
 from .truth_cache import (
@@ -273,6 +271,18 @@ def list_candidate_bundles_for_speaker(
     Returns:
         List of claim bundles (each bundle is a list of claims)
     """
+    def _bundle_reuses_same_two_people(bundle: list["Claim"]) -> bool:
+        """Return True if bundle's first two claims involve the exact same pair of people.
+
+        We keep this narrowly focused (size==2 variable sets) so we don't overly
+        constrain count-claims, while still improving dialogue variety.
+        """
+        if len(bundle) < 2:
+            return False
+        v0 = bundle[0].variables_involved()
+        v1 = bundle[1].variables_involved()
+        return len(v0) == 2 and v0 == v1
+
     # Filter claims that don't violate self-reference rule
     if config.forbid_self_reference:
         available_claims = [
@@ -355,6 +365,13 @@ def list_candidate_bundles_for_speaker(
                         # Only add if bundle meets minimum size requirement after filtering
                         if len(filtered_bundle) >= min_claims:
                             candidate_bundles.append(filtered_bundle)
+
+    # Preference: if we have enough options, avoid bundles where claim 1 and claim 2
+    # talk about the exact same two people (better narrative variety).
+    if min_claims >= 2 and candidate_bundles:
+        good = [b for b in candidate_bundles if not _bundle_reuses_same_two_people(b)]
+        if good:
+            return good
 
     return candidate_bundles
 
