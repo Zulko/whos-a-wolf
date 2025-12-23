@@ -51,4 +51,4 @@ htmlcov/
 
 # Sandbox folder
 .sandbox/
-
+truth_cache.json

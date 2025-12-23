@@ -14,7 +14,6 @@ from .claims import (
     AtLeastOne,
     AtMostKWerewolves,
     BothOrNeither,
-    CountClaim,
     ExactlyKWerewolves,
     ExactlyOne,
     EvenNumberOfWerewolves,
@@ -22,7 +21,6 @@ from .claims import (
     IfNotAThenB,
     Neither,
     OddNumberOfWerewolves,
-    RelationshipClaim,
 )
 from .models import GenerationConfig, Puzzle, Villager
 from .truth_cache import (
@@ -62,6 +60,59 @@ def claim_contains_other(
     # This means: (mask_a & ~mask_b) == 0
     # In other words: all bits set in mask_a must also be set in mask_b
     return (mask_a & ~mask_b) == 0
+
+
+def claims_are_contradictory(
+    claim_a: "Claim",
+    claim_b: "Claim",
+    truth_cache: ClaimTruthTableCache,
+) -> bool:
+    """Check if two claims are contradictory.
+
+    Two claims are contradictory if they can never both be true simultaneously.
+    This means their truth masks have no overlap (intersection is empty).
+
+    Args:
+        claim_a: First claim
+        claim_b: Second claim
+        truth_cache: Truth table cache
+
+    Returns:
+        True if the claims are contradictory, False otherwise
+    """
+    if claim_a == claim_b:
+        return False  # A claim is not contradictory with itself
+
+    mask_a = truth_cache.get_truth_mask(claim_a)
+    mask_b = truth_cache.get_truth_mask(claim_b)
+
+    # Claims are contradictory if their truth masks have no overlap
+    return (mask_a & mask_b) == 0
+
+
+def bundle_has_contradictory_claims(
+    bundle: list["Claim"],
+    truth_cache: ClaimTruthTableCache,
+) -> bool:
+    """Check if a bundle contains any pair of contradictory claims.
+
+    Args:
+        bundle: List of claims to check
+        truth_cache: Truth table cache
+
+    Returns:
+        True if the bundle contains contradictory claims, False otherwise
+    """
+    if len(bundle) <= 1:
+        return False
+
+    for i, claim_a in enumerate(bundle):
+        for j, claim_b in enumerate(bundle):
+            if i < j:  # Check each pair only once
+                if claims_are_contradictory(claim_a, claim_b, truth_cache):
+                    return True
+
+    return False
 
 
 def filter_redundant_claims(
@@ -220,6 +271,19 @@ def list_candidate_bundles_for_speaker(
     Returns:
         List of claim bundles (each bundle is a list of claims)
     """
+
+    def _bundle_reuses_same_two_people(bundle: list["Claim"]) -> bool:
+        """Return True if bundle's first two claims involve the exact same pair of people.
+
+        We keep this narrowly focused (size==2 variable sets) so we don't overly
+        constrain count-claims, while still improving dialogue variety.
+        """
+        if len(bundle) < 2:
+            return False
+        v0 = bundle[0].variables_involved()
+        v1 = bundle[1].variables_involved()
+        return len(v0) == 2 and v0 == v1
+
     # Filter claims that don't violate self-reference rule
     if config.forbid_self_reference:
         available_claims = [
@@ -252,6 +316,9 @@ def list_candidate_bundles_for_speaker(
                 if is_wolf:
                     # Wolf: at least one must be false
                     if not all_true:
+                        # Filter out bundles with contradictory claims (would make it obvious they're a werewolf)
+                        if bundle_has_contradictory_claims(bundle_list, truth_cache):
+                            continue
                         # Filter redundant claims before adding
                         filtered_bundle = filter_redundant_claims(
                             bundle_list, truth_cache
@@ -280,6 +347,9 @@ def list_candidate_bundles_for_speaker(
 
                 if is_wolf:
                     if not all_true:
+                        # Filter out bundles with contradictory claims (would make it obvious they're a werewolf)
+                        if bundle_has_contradictory_claims(bundle_list, truth_cache):
+                            continue
                         # Filter redundant claims before adding
                         filtered_bundle = filter_redundant_claims(
                             bundle_list, truth_cache
@@ -296,6 +366,13 @@ def list_candidate_bundles_for_speaker(
                         # Only add if bundle meets minimum size requirement after filtering
                         if len(filtered_bundle) >= min_claims:
                             candidate_bundles.append(filtered_bundle)
+
+    # Preference: if we have enough options, avoid bundles where claim 1 and claim 2
+    # talk about the exact same two people (better narrative variety).
+    if min_claims >= 2 and candidate_bundles:
+        good = [b for b in candidate_bundles if not _bundle_reuses_same_two_people(b)]
+        if good:
+            return good
 
     return candidate_bundles
 
