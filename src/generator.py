@@ -203,22 +203,37 @@ def build_claim_library(config: GenerationConfig) -> list["Claim"]:
     N = config.N
     claims = []
 
-    # Relationship claims (all pairs)
-    relationship_classes = [
-        IfAThenB,
+    # Relationship claims
+    # Symmetrical relationships: only create one instance per unordered pair
+    symmetrical_classes = [
         BothOrNeither,
         AtLeastOne,
         ExactlyOne,
-        IfNotAThenB,
         Neither,
     ]
+    
+    # Non-symmetrical relationships: create for all ordered pairs
+    non_symmetrical_classes = [
+        IfAThenB,
+        IfNotAThenB,
+    ]
 
+    # Create symmetrical relationship claims (only a <= b to avoid duplicates)
+    for a in range(N):
+        for b in range(a, N):
+            if a == b and config.forbid_self_reference:
+                continue
+            
+            for claim_class in symmetrical_classes:
+                claims.append(claim_class(a, b))
+    
+    # Create non-symmetrical relationship claims (all ordered pairs)
     for a in range(N):
         for b in range(N):
             if a == b and config.forbid_self_reference:
                 continue
-
-            for claim_class in relationship_classes:
+            
+            for claim_class in non_symmetrical_classes:
                 claims.append(claim_class(a, b))
 
     # Count claims (if allowed)

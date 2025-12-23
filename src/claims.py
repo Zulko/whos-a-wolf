@@ -138,6 +138,11 @@ class IfAThenB(RelationshipClaim):
 class BothOrNeither(RelationshipClaim):
     """Semantics: W[a] == W[b]"""
     
+    def __init__(self, a_index: int, b_index: int):
+        """Initialize a BothOrNeither claim, normalizing indices for symmetry."""
+        # Normalize: always store min(a, b) as a_index, max(a, b) as b_index
+        super().__init__(min(a_index, b_index), max(a_index, b_index))
+    
     @property
     def claim_id(self) -> str:
         return f"EQ({self.a_index},{self.b_index})"
@@ -160,6 +165,11 @@ class BothOrNeither(RelationshipClaim):
 class AtLeastOne(RelationshipClaim):
     """Semantics: W[a] OR W[b]"""
     
+    def __init__(self, a_index: int, b_index: int):
+        """Initialize an AtLeastOne claim, normalizing indices for symmetry."""
+        # Normalize: always store min(a, b) as a_index, max(a, b) as b_index
+        super().__init__(min(a_index, b_index), max(a_index, b_index))
+    
     @property
     def claim_id(self) -> str:
         return f"OR({self.a_index},{self.b_index})"
@@ -181,6 +191,11 @@ class AtLeastOne(RelationshipClaim):
 
 class ExactlyOne(RelationshipClaim):
     """Semantics: W[a] XOR W[b] (i.e., W[a] != W[b])"""
+    
+    def __init__(self, a_index: int, b_index: int):
+        """Initialize an ExactlyOne claim, normalizing indices for symmetry."""
+        # Normalize: always store min(a, b) as a_index, max(a, b) as b_index
+        super().__init__(min(a_index, b_index), max(a_index, b_index))
     
     @property
     def claim_id(self) -> str:
@@ -226,6 +241,11 @@ class IfNotAThenB(RelationshipClaim):
 
 class Neither(RelationshipClaim):
     """Semantics: (NOT W[a]) AND (NOT W[b])"""
+    
+    def __init__(self, a_index: int, b_index: int):
+        """Initialize a Neither claim, normalizing indices for symmetry."""
+        # Normalize: always store min(a, b) as a_index, max(a, b) as b_index
+        super().__init__(min(a_index, b_index), max(a_index, b_index))
     
     @property
     def claim_id(self) -> str:
