@@ -235,3 +235,4 @@ def test_symmetrical_claims_evaluate_correctly():
     for assignment in assignments:
         assert claim7.evaluate_on_assignment(assignment) == claim8.evaluate_on_assignment(assignment)
 
+

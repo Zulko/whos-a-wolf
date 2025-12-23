@@ -264,8 +264,8 @@ def build_claim_library(config: GenerationConfig) -> list["Claim"]:
     if config.allow_count_claims:
         all_indices = tuple(range(N))
 
-        # Exactly K werewolves (for various K)
-        for k in range(N + 1):
+        # Exactly K werewolves (for various K, minimum 1)
+        for k in range(1, N + 1):
             claims.append(ExactlyKWerewolves(all_indices, k))
 
         # At most/at least K werewolves
@@ -281,8 +281,8 @@ def build_claim_library(config: GenerationConfig) -> list["Claim"]:
         for speaker in range(N):
             scope = tuple(i for i in range(N) if i != speaker)
             if len(scope) > 0:
-                # Exactly K in scope
-                for k in range(len(scope) + 1):
+                # Exactly K in scope (minimum 1)
+                for k in range(1, len(scope) + 1):
                     claims.append(ExactlyKWerewolves(scope, k))
                 # Parity in scope
                 claims.append(EvenNumberOfWerewolves(scope))
