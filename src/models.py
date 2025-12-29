@@ -23,7 +23,7 @@ class Puzzle:
     statements_by_speaker: list[list["Statement"]]
     difficulty_score: float = 0.0
     solution_assignment: tuple[bool, ...] | None = None
-    minion_assignment: tuple[bool, ...] | None = None
+    shill_assignment: tuple[bool, ...] | None = None
 
 
 @dataclass
@@ -47,4 +47,4 @@ class GenerationConfig:
     # Optional constraints on target assignment
     min_werewolves: int | None = None
     max_werewolves: int | None = None
-    has_minion: bool = False
+    has_shill: bool = False

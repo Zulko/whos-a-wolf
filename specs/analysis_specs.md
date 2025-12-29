@@ -6,4 +6,4 @@ In a folder "analysis" at the root, for each number of player 4, 5, 6, write a s
 game generations as a CSV
 
 - N
-  (with minion), with for each generation,
+  (with shill), with for each generation,

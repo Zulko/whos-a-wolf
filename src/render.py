@@ -31,14 +31,14 @@ class PuzzleRenderer:
             lines.append(f"  {villager.index + 1}. {villager.name}")
 
         lines.append("")
-        has_minion = puzzle.minion_assignment is not None
-        if has_minion:
+        has_shill = puzzle.shill_assignment is not None
+        if has_shill:
             lines.append("Each villager is either a Human (always tells the truth),")
             lines.append("a Werewolf (at least one thing they say is wrong),")
             lines.append(
                 "or a Minion (not a werewolf, but at least one thing they say is wrong)."
             )
-            lines.append("There is exactly one minion among the non-werewolves.")
+            lines.append("There is exactly one shill among the non-werewolves.")
         else:
             lines.append("Each villager is either a Human (always tells the truth)")
             lines.append("or a Werewolf (at least one thing they say is wrong).")
@@ -83,8 +83,8 @@ class PuzzleRenderer:
             lines.append(f"- **{villager.name}**")
 
         lines.append("")
-        has_minion = puzzle.minion_assignment is not None
-        if has_minion:
+        has_shill = puzzle.shill_assignment is not None
+        if has_shill:
             lines.append(
                 "Each villager is either a **Human** (always tells the truth),"
             )
@@ -92,7 +92,7 @@ class PuzzleRenderer:
             lines.append(
                 "or a **Minion** (not a werewolf, but at least one thing they say is wrong)."
             )
-            lines.append("There is exactly one minion among the non-werewolves.")
+            lines.append("There is exactly one shill among the non-werewolves.")
         else:
             lines.append("Each villager is either a **Human** (always tells the truth)")
             lines.append("or a **Werewolf** (at least one thing they say is wrong).")
@@ -139,16 +139,16 @@ class PuzzleRenderer:
             else:
                 lines.append("There are no werewolves - all villagers are human!")
 
-            if puzzle.minion_assignment:
-                minions = [
+            if puzzle.shill_assignment:
+                shills = [
                     puzzle.villagers[i].name
-                    for i, is_minion in enumerate(puzzle.minion_assignment)
-                    if is_minion
+                    for i, is_shill in enumerate(puzzle.shill_assignment)
+                    if is_shill
                 ]
-                if minions:
+                if shills:
                     lines.append("")
-                    lines.append("The minion is:")
-                    for name in minions:
+                    lines.append("The shill is:")
+                    for name in shills:
                         lines.append(f"- {name}")
 
         return "\n".join(lines)

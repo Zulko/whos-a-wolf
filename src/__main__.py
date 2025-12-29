@@ -65,9 +65,9 @@ def main() -> None:
         help="Include solution in output",
     )
     parser.add_argument(
-        "--has-minion",
+        "--has-shill",
         action="store_true",
-        help="Enable minion mode: exactly one non-werewolf will be a minion who lies",
+        help="Enable shill mode: exactly one non-werewolf will be a shill who lies",
     )
     parser.add_argument(
         "--min-werewolves",
@@ -84,11 +84,11 @@ def main() -> None:
 
     args = parser.parse_args()
 
-    # Cap max_werewolves at N-1 if minions are enabled (need at least one non-werewolf for minion)
+    # Cap max_werewolves at N-1 if shills are enabled (need at least one non-werewolf for shill)
     max_werewolves = args.max_werewolves
-    if args.has_minion and max_werewolves is not None:
+    if args.has_shill and max_werewolves is not None:
         max_werewolves = min(max_werewolves, args.N - 1)
-    elif args.has_minion:
+    elif args.has_shill:
         max_werewolves = args.N - 1
 
     # Create config
@@ -97,7 +97,7 @@ def main() -> None:
         statements_per_speaker_min=args.statements_min,
         statements_per_speaker_max=args.statements_max,
         max_attempts=args.max_attempts,
-        has_minion=args.has_minion,
+        has_shill=args.has_shill,
         min_werewolves=args.min_werewolves,
         max_werewolves=max_werewolves,
     )
@@ -157,7 +157,7 @@ def main() -> None:
             statements_by_speaker=puzzle.statements_by_speaker,
             difficulty_score=puzzle.difficulty_score,
             solution_assignment=None,
-            minion_assignment=None,
+            shill_assignment=None,
         )
 
     # Render puzzle
