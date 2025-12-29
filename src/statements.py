@@ -65,6 +65,62 @@ class Statement(ABC):
         """
         pass
 
+    @abstractmethod
+    def to_dict(self) -> dict:
+        """Convert statement to dictionary.
+
+        Returns:
+            Dictionary representation of the statement
+        """
+        pass
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Statement":
+        """Create statement from dictionary.
+
+        Args:
+            data: Dictionary with statement data, must include 'type' field
+
+        Returns:
+            Statement instance
+
+        Raises:
+            ValueError: If the statement type is unknown
+        """
+        stmt_type = data.get("type")
+        if stmt_type is None:
+            raise ValueError("Statement dict must include 'type' field")
+
+        if stmt_type == "IfAThenB":
+            return IfAThenB(data["a_index"], data["b_index"])
+        elif stmt_type == "BothOrNeither":
+            return BothOrNeither(data["a_index"], data["b_index"])
+        elif stmt_type == "AtLeastOne":
+            return AtLeastOne(data["a_index"], data["b_index"])
+        elif stmt_type == "ExactlyOne":
+            return ExactlyOne(data["a_index"], data["b_index"])
+        elif stmt_type == "IfNotAThenB":
+            return IfNotAThenB(data["a_index"], data["b_index"])
+        elif stmt_type == "Neither":
+            return Neither(data["a_index"], data["b_index"])
+        elif stmt_type == "ExactlyKWerewolves":
+            scope = tuple(data["scope_indices"])
+            return ExactlyKWerewolves(scope, data["count"])
+        elif stmt_type == "AtMostKWerewolves":
+            scope = tuple(data["scope_indices"])
+            return AtMostKWerewolves(scope, data["count"])
+        elif stmt_type == "AtLeastKWerewolves":
+            scope = tuple(data["scope_indices"])
+            return AtLeastKWerewolves(scope, data["count"])
+        elif stmt_type == "EvenNumberOfWerewolves":
+            scope = tuple(data["scope_indices"])
+            return EvenNumberOfWerewolves(scope)
+        elif stmt_type == "OddNumberOfWerewolves":
+            scope = tuple(data["scope_indices"])
+            return OddNumberOfWerewolves(scope)
+        else:
+            raise ValueError(f"Unknown statement type: {stmt_type}")
+
     def __hash__(self) -> int:
         """Hash based on statement_id for use in sets/dicts."""
         return hash(self.statement_id)
@@ -93,6 +149,18 @@ class RelationshipStatement(Statement):
         """Return the set of villager indices referenced."""
         return {self.a_index, self.b_index}
 
+    def to_dict(self) -> dict:
+        """Convert relationship statement to dictionary.
+
+        Returns:
+            Dictionary with 'type', 'a_index', and 'b_index' fields
+        """
+        return {
+            "type": self.__class__.__name__,
+            "a_index": self.a_index,
+            "b_index": self.b_index,
+        }
+
 
 class CountStatement(Statement):
     """Base class for statements about counts of werewolves."""
@@ -108,6 +176,18 @@ class CountStatement(Statement):
     def variables_involved(self) -> set[int]:
         """Return the set of villager indices referenced."""
         return set(self.scope_indices)
+
+    def to_dict(self) -> dict:
+        """Convert count statement to dictionary.
+
+        Returns:
+            Dictionary with 'type' and 'scope_indices' fields.
+            Subclasses with 'count' should override to include it.
+        """
+        return {
+            "type": self.__class__.__name__,
+            "scope_indices": list(self.scope_indices),  # Convert tuple to list for JSON
+        }
 
 
 # Relationship Statement Subclasses
@@ -319,6 +399,18 @@ class ExactlyKWerewolves(CountStatement):
         # Higher cost for count statements, especially exact counts
         return 3
 
+    def to_dict(self) -> dict:
+        """Convert exactly-k statement to dictionary.
+
+        Returns:
+            Dictionary with 'type', 'scope_indices', and 'count' fields
+        """
+        return {
+            "type": self.__class__.__name__,
+            "scope_indices": list(self.scope_indices),  # Convert tuple to list for JSON
+            "count": self.count,
+        }
+
 
 class AtMostKWerewolves(CountStatement):
     """Semantics: SUM(W[i] for i in scope) <= count"""
@@ -362,6 +454,18 @@ class AtMostKWerewolves(CountStatement):
     def complexity_cost(self) -> int:
         return 2
 
+    def to_dict(self) -> dict:
+        """Convert at-most-k statement to dictionary.
+
+        Returns:
+            Dictionary with 'type', 'scope_indices', and 'count' fields
+        """
+        return {
+            "type": self.__class__.__name__,
+            "scope_indices": list(self.scope_indices),  # Convert tuple to list for JSON
+            "count": self.count,
+        }
+
 
 class AtLeastKWerewolves(CountStatement):
     """Semantics: SUM(W[i] for i in scope) >= count"""
@@ -404,6 +508,18 @@ class AtLeastKWerewolves(CountStatement):
 
     def complexity_cost(self) -> int:
         return 2
+
+    def to_dict(self) -> dict:
+        """Convert at-least-k statement to dictionary.
+
+        Returns:
+            Dictionary with 'type', 'scope_indices', and 'count' fields
+        """
+        return {
+            "type": self.__class__.__name__,
+            "scope_indices": list(self.scope_indices),  # Convert tuple to list for JSON
+            "count": self.count,
+        }
 
 
 class EvenNumberOfWerewolves(CountStatement):
