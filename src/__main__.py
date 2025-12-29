@@ -7,7 +7,7 @@ from pathlib import Path
 from .generator import generate_puzzle
 from .models import GenerationConfig
 from .render import PuzzleRenderer
-from .truth_cache import ClaimTruthTableCache
+from .truth_cache import StatementTruthTableCache
 
 
 def main() -> None:
@@ -20,16 +20,16 @@ def main() -> None:
         help="Number of villagers (default: 6)",
     )
     parser.add_argument(
-        "--claims-min",
+        "--statements-min",
         type=int,
-        default=2,
-        help="Minimum claims per speaker (default: 2)",
+        default=1,
+        help="Minimum statements per speaker (default: 2)",
     )
     parser.add_argument(
-        "--claims-max",
+        "--statements-max",
         type=int,
         default=2,
-        help="Maximum claims per speaker (default: 2)",
+        help="Maximum statements per speaker (default: 2)",
     )
     parser.add_argument(
         "--max-attempts",
@@ -84,54 +84,61 @@ def main() -> None:
 
     args = parser.parse_args()
 
+    # Cap max_werewolves at N-1 if minions are enabled (need at least one non-werewolf for minion)
+    max_werewolves = args.max_werewolves
+    if args.has_minion and max_werewolves is not None:
+        max_werewolves = min(max_werewolves, args.N - 1)
+    elif args.has_minion:
+        max_werewolves = args.N - 1
+
     # Create config
     config = GenerationConfig(
         N=args.N,
-        claims_per_speaker_min=args.claims_min,
-        claims_per_speaker_max=args.claims_max,
+        statements_per_speaker_min=args.statements_min,
+        statements_per_speaker_max=args.statements_max,
         max_attempts=args.max_attempts,
         has_minion=args.has_minion,
         min_werewolves=args.min_werewolves,
-        max_werewolves=args.max_werewolves,
+        max_werewolves=max_werewolves,
     )
 
     # Load or build truth cache
     cache_path = Path(args.cache_file)
     if args.rebuild_cache or not cache_path.exists():
         print(f"Building truth cache for N={config.N}...", file=sys.stderr)
-        from .generator import build_claim_library
+        from .generator import build_statement_library
 
-        claim_library = build_claim_library(config)
-        truth_cache = ClaimTruthTableCache.build_for_claim_library(
-            claim_library, config.N
+        statement_library = build_statement_library(config)
+        truth_cache = StatementTruthTableCache.build_for_statement_library(
+            statement_library, config.N
         )
         truth_cache.save_to_json(str(cache_path))
         print(f"Cache saved to {cache_path}", file=sys.stderr)
     else:
         print(f"Loading truth cache from {cache_path}...", file=sys.stderr)
         try:
-            truth_cache = ClaimTruthTableCache.load_from_json(str(cache_path))
+            truth_cache = StatementTruthTableCache.load_from_json(str(cache_path))
             if truth_cache.N != config.N:
                 print(
                     f"Warning: Cache has N={truth_cache.N}, but requested N={config.N}",
                     file=sys.stderr,
                 )
                 print("Rebuilding cache...", file=sys.stderr)
-                from .generator import build_claim_library
+                from .generator import build_statement_library
 
-                claim_library = build_claim_library(config)
-                truth_cache = ClaimTruthTableCache.build_for_claim_library(
-                    claim_library, config.N
+                statement_library = build_statement_library(config)
+                truth_cache = StatementTruthTableCache.build_for_statement_library(
+                    statement_library, config.N
                 )
                 truth_cache.save_to_json(str(cache_path))
         except Exception as e:
             print(f"Error loading cache: {e}", file=sys.stderr)
             print("Rebuilding cache...", file=sys.stderr)
-            from .generator import build_claim_library
+            from .generator import build_statement_library
 
-            claim_library = build_claim_library(config)
-            truth_cache = ClaimTruthTableCache.build_for_claim_library(
-                claim_library, config.N
+            statement_library = build_statement_library(config)
+            truth_cache = StatementTruthTableCache.build_for_statement_library(
+                statement_library, config.N
             )
             truth_cache.save_to_json(str(cache_path))
 
@@ -147,7 +154,7 @@ def main() -> None:
     if not args.show_solution:
         puzzle = puzzle.__class__(
             villagers=puzzle.villagers,
-            claims_by_speaker=puzzle.claims_by_speaker,
+            statements_by_speaker=puzzle.statements_by_speaker,
             difficulty_score=puzzle.difficulty_score,
             solution_assignment=None,
             minion_assignment=None,

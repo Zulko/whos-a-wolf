@@ -5,11 +5,11 @@ from itertools import combinations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from .claims import Claim
+    from .statements import Statement
     from .models import GenerationConfig, Puzzle
-    from .truth_cache import ClaimTruthTableCache
+    from .truth_cache import StatementTruthTableCache
 
-from .claims import (
+from .statements import (
     AtLeastKWerewolves,
     AtLeastOne,
     AtMostKWerewolves,
@@ -24,7 +24,7 @@ from .claims import (
 )
 from .models import GenerationConfig, Puzzle, Villager
 from .truth_cache import (
-    ClaimTruthTableCache,
+    StatementTruthTableCache,
     assignment_to_index,
     compute_human_wolf_masks,
     compute_minion_masks,
@@ -33,29 +33,29 @@ from .truth_cache import (
 from .utils import get_default_names
 
 
-def claim_contains_other(
-    claim_a: "Claim",
-    claim_b: "Claim",
-    truth_cache: ClaimTruthTableCache,
+def statement_contains_other(
+    statement_a: "Statement",
+    statement_b: "Statement",
+    truth_cache: StatementTruthTableCache,
 ) -> bool:
-    """Check if claim A logically contains claim B.
+    """Check if statement A logically contains statement B.
 
-    Claim A contains claim B if: whenever A is true, B is also true (A => B).
+    Statement A contains statement B if: whenever A is true, B is also true (A => B).
     This means A's truth mask must be a subset of B's truth mask.
 
     Args:
-        claim_a: The potentially containing claim
-        claim_b: The potentially contained claim
+        statement_a: The potentially containing statement
+        statement_b: The potentially contained statement
         truth_cache: Truth table cache
 
     Returns:
-        True if claim_a contains claim_b, False otherwise
+        True if statement_a contains statement_b, False otherwise
     """
-    if claim_a == claim_b:
-        return False  # A claim doesn't contain itself (avoid removing duplicates)
+    if statement_a == statement_b:
+        return False  # A statement doesn't contain itself (avoid removing duplicates)
 
-    mask_a = truth_cache.get_truth_mask(claim_a)
-    mask_b = truth_cache.get_truth_mask(claim_b)
+    mask_a = truth_cache.get_truth_mask(statement_a)
+    mask_b = truth_cache.get_truth_mask(statement_b)
 
     # A contains B if: whenever A is true, B is also true
     # This means: (mask_a & ~mask_b) == 0
@@ -63,102 +63,102 @@ def claim_contains_other(
     return (mask_a & ~mask_b) == 0
 
 
-def claims_are_contradictory(
-    claim_a: "Claim",
-    claim_b: "Claim",
-    truth_cache: ClaimTruthTableCache,
+def statements_are_contradictory(
+    statement_a: "Statement",
+    statement_b: "Statement",
+    truth_cache: StatementTruthTableCache,
 ) -> bool:
-    """Check if two claims are contradictory.
+    """Check if two statements are contradictory.
 
-    Two claims are contradictory if they can never both be true simultaneously.
+    Two statements are contradictory if they can never both be true simultaneously.
     This means their truth masks have no overlap (intersection is empty).
 
     Args:
-        claim_a: First claim
-        claim_b: Second claim
+        statement_a: First statement
+        statement_b: Second statement
         truth_cache: Truth table cache
 
     Returns:
-        True if the claims are contradictory, False otherwise
+        True if the statements are contradictory, False otherwise
     """
-    if claim_a == claim_b:
-        return False  # A claim is not contradictory with itself
+    if statement_a == statement_b:
+        return False  # A statement is not contradictory with itself
 
-    mask_a = truth_cache.get_truth_mask(claim_a)
-    mask_b = truth_cache.get_truth_mask(claim_b)
+    mask_a = truth_cache.get_truth_mask(statement_a)
+    mask_b = truth_cache.get_truth_mask(statement_b)
 
-    # Claims are contradictory if their truth masks have no overlap
+    # Statements are contradictory if their truth masks have no overlap
     return (mask_a & mask_b) == 0
 
 
-def bundle_has_contradictory_claims(
-    bundle: list["Claim"],
-    truth_cache: ClaimTruthTableCache,
+def bundle_has_contradictory_statements(
+    bundle: list["Statement"],
+    truth_cache: StatementTruthTableCache,
 ) -> bool:
-    """Check if a bundle contains any pair of contradictory claims.
+    """Check if a bundle contains any pair of contradictory statements.
 
     Args:
-        bundle: List of claims to check
+        bundle: List of statements to check
         truth_cache: Truth table cache
 
     Returns:
-        True if the bundle contains contradictory claims, False otherwise
+        True if the bundle contains contradictory statements, False otherwise
     """
     if len(bundle) <= 1:
         return False
 
-    for i, claim_a in enumerate(bundle):
-        for j, claim_b in enumerate(bundle):
+    for i, statement_a in enumerate(bundle):
+        for j, statement_b in enumerate(bundle):
             if i < j:  # Check each pair only once
-                if claims_are_contradictory(claim_a, claim_b, truth_cache):
+                if statements_are_contradictory(statement_a, statement_b, truth_cache):
                     return True
 
     return False
 
 
-def filter_redundant_claims(
-    bundle: list["Claim"],
-    truth_cache: ClaimTruthTableCache,
-) -> list["Claim"]:
-    """Remove redundant claims from a bundle.
+def filter_redundant_statements(
+    bundle: list["Statement"],
+    truth_cache: StatementTruthTableCache,
+) -> list["Statement"]:
+    """Remove redundant statements from a bundle.
 
-    If claim A contains claim B, remove claim B (the weaker claim).
-    If claim B contains claim A, remove claim A (the weaker claim).
+    If statement A contains statement B, remove statement B (the weaker statement).
+    If statement B contains statement A, remove statement A (the weaker statement).
 
     Args:
-        bundle: List of claims to filter
+        bundle: List of statements to filter
         truth_cache: Truth table cache
 
     Returns:
-        Filtered list of claims with redundancies removed
+        Filtered list of statements with redundancies removed
     """
     if len(bundle) <= 1:
         return bundle
 
-    # Build a list of claims to keep
-    # We'll check each claim against all others
+    # Build a list of statements to keep
+    # We'll check each statement against all others
     to_remove = set()
 
-    for i, claim_a in enumerate(bundle):
+    for i, statement_a in enumerate(bundle):
         if i in to_remove:
             continue
 
-        for j, claim_b in enumerate(bundle):
+        for j, statement_b in enumerate(bundle):
             if i == j or j in to_remove:
                 continue
 
-            # Check if claim_a contains claim_b
-            if claim_contains_other(claim_a, claim_b, truth_cache):
-                # claim_a contains claim_b, so remove claim_b (the weaker one)
+            # Check if statement_a contains statement_b
+            if statement_contains_other(statement_a, statement_b, truth_cache):
+                # statement_a contains statement_b, so remove statement_b (the weaker one)
                 to_remove.add(j)
-            # Check if claim_b contains claim_a
-            elif claim_contains_other(claim_b, claim_a, truth_cache):
-                # claim_b contains claim_a, so remove claim_a (the weaker one)
+            # Check if statement_b contains statement_a
+            elif statement_contains_other(statement_b, statement_a, truth_cache):
+                # statement_b contains statement_a, so remove statement_a (the weaker one)
                 to_remove.add(i)
-                break  # No need to check further for claim_a
+                break  # No need to check further for statement_a
 
     # Return filtered bundle
-    return [claim for idx, claim in enumerate(bundle) if idx not in to_remove]
+    return [statement for idx, statement in enumerate(bundle) if idx not in to_remove]
 
 
 def choose_target_assignment(
@@ -176,11 +176,21 @@ def choose_target_assignment(
     """
     N = config.N
 
+    # If minions are enabled, cap max_werewolves at N-1 (need at least one non-werewolf for minion)
+    effective_max_werewolves = config.max_werewolves
+    if config.has_minion:
+        if effective_max_werewolves is not None:
+            effective_max_werewolves = min(effective_max_werewolves, N - 1)
+        else:
+            effective_max_werewolves = N - 1
+
     # If constraints on werewolf count, filter assignments
-    if config.min_werewolves is not None or config.max_werewolves is not None:
+    if config.min_werewolves is not None or effective_max_werewolves is not None:
         valid_assignments = []
         min_wolves = config.min_werewolves if config.min_werewolves is not None else 0
-        max_wolves = config.max_werewolves if config.max_werewolves is not None else N
+        max_wolves = (
+            effective_max_werewolves if effective_max_werewolves is not None else N
+        )
 
         for assignment_idx in range(1 << N):
             assignment = index_to_assignment(assignment_idx, N)
@@ -215,19 +225,19 @@ def choose_target_assignment(
     return (W_star, M_star)
 
 
-def build_claim_library(config: GenerationConfig) -> list["Claim"]:
-    """Build a library of all allowed claims.
+def build_statement_library(config: GenerationConfig) -> list["Statement"]:
+    """Build a library of all allowed statements.
 
     Args:
         config: Generation configuration
 
     Returns:
-        List of all allowed claims
+        List of all allowed statements
     """
     N = config.N
-    claims = []
+    statements = []
 
-    # Relationship claims
+    # Relationship statements
     # Symmetrical relationships: only create one instance per unordered pair
     symmetrical_classes = [
         BothOrNeither,
@@ -242,82 +252,82 @@ def build_claim_library(config: GenerationConfig) -> list["Claim"]:
         IfNotAThenB,
     ]
 
-    # Create symmetrical relationship claims (only a <= b to avoid duplicates)
+    # Create symmetrical relationship statements (only a <= b to avoid duplicates)
     for a in range(N):
         for b in range(a, N):
             if a == b and config.forbid_self_reference:
                 continue
 
-            for claim_class in symmetrical_classes:
-                claims.append(claim_class(a, b))
+            for statement_class in symmetrical_classes:
+                statements.append(statement_class(a, b))
 
-    # Create non-symmetrical relationship claims (all ordered pairs)
+    # Create non-symmetrical relationship statements (all ordered pairs)
     for a in range(N):
         for b in range(N):
             if a == b and config.forbid_self_reference:
                 continue
 
-            for claim_class in non_symmetrical_classes:
-                claims.append(claim_class(a, b))
+            for statement_class in non_symmetrical_classes:
+                statements.append(statement_class(a, b))
 
-    # Count claims (if allowed)
-    if config.allow_count_claims:
+    # Count statements (if allowed)
+    if config.allow_count_statements:
         all_indices = tuple(range(N))
 
         # Exactly K werewolves (for various K, minimum 1)
         for k in range(1, N + 1):
-            claims.append(ExactlyKWerewolves(all_indices, k))
+            statements.append(ExactlyKWerewolves(all_indices, k))
 
         # At most/at least K werewolves
         for k in range(N + 1):
-            claims.append(AtMostKWerewolves(all_indices, k))
-            claims.append(AtLeastKWerewolves(all_indices, k))
+            statements.append(AtMostKWerewolves(all_indices, k))
+            statements.append(AtLeastKWerewolves(all_indices, k))
 
-        # Parity claims
-        claims.append(EvenNumberOfWerewolves(all_indices))
-        claims.append(OddNumberOfWerewolves(all_indices))
+        # Parity statements
+        statements.append(EvenNumberOfWerewolves(all_indices))
+        statements.append(OddNumberOfWerewolves(all_indices))
 
-        # Scoped claims (all except speaker)
+        # Scoped statements (all except speaker)
         for speaker in range(N):
             scope = tuple(i for i in range(N) if i != speaker)
             if len(scope) > 0:
                 # Exactly K in scope (minimum 1)
                 for k in range(1, len(scope) + 1):
-                    claims.append(ExactlyKWerewolves(scope, k))
+                    statements.append(ExactlyKWerewolves(scope, k))
                 # Parity in scope
-                claims.append(EvenNumberOfWerewolves(scope))
-                claims.append(OddNumberOfWerewolves(scope))
+                statements.append(EvenNumberOfWerewolves(scope))
+                statements.append(OddNumberOfWerewolves(scope))
 
-    return claims
+    return statements
 
 
 def list_candidate_bundles_for_speaker(
     speaker_index: int,
     W_star: tuple[bool, ...],
     M_star: tuple[bool, ...],
-    claim_library: list["Claim"],
-    truth_cache: ClaimTruthTableCache,
+    statement_library: list["Statement"],
+    truth_cache: StatementTruthTableCache,
     config: GenerationConfig,
-) -> list[list["Claim"]]:
-    """List candidate claim bundles for a speaker consistent with W_star and M_star.
+) -> list[list["Statement"]]:
+    """List candidate statement bundles for a speaker consistent with W_star and M_star.
 
     Args:
         speaker_index: Index of the speaker
         W_star: Target werewolf assignment
         M_star: Target minion assignment
-        claim_library: Library of available claims
+        statement_library: Library of available statements
         truth_cache: Truth table cache
         config: Generation configuration
 
     Returns:
-        List of claim bundles (each bundle is a list of claims)
+        List of statement bundles (each bundle is a list of statements)
     """
 
-    def _bundle_reuses_same_two_people(bundle: list["Claim"]) -> bool:
-        """Return True if bundle's first two claims involve the exact same pair of people.
+    def _bundle_reuses_same_two_people(bundle: list["Statement"]) -> bool:
+        """Return True if bundle's first two statements involve the exact same pair of people.
 
         We keep this narrowly focused (size==2 variable sets) so we don't overly
-        constrain count-claims, while still improving dialogue variety.
+        constrain count-statements, while still improving dialogue variety.
         """
         if len(bundle) < 2:
             return False
@@ -325,94 +335,100 @@ def list_candidate_bundles_for_speaker(
         v1 = bundle[1].variables_involved()
         return len(v0) == 2 and v0 == v1
 
-    # Filter claims that don't violate self-reference rule
+    # Filter statements that don't violate self-reference rule
     if config.forbid_self_reference:
-        available_claims = [
-            c for c in claim_library if speaker_index not in c.variables_involved()
+        available_statements = [
+            c for c in statement_library if speaker_index not in c.variables_involved()
         ]
     else:
-        available_claims = claim_library
+        available_statements = statement_library
 
     # Determine what the bundle must satisfy
-    # If speaker is human: all claims must be true
-    # If speaker is wolf or minion: at least one claim must be false
+    # If speaker is human: all statements must be true
+    # If speaker is wolf or minion: at least one statement must be false
     is_wolf = W_star[speaker_index]
     is_minion = M_star[speaker_index]
     can_lie = is_wolf or is_minion
 
     candidate_bundles = []
-    min_claims = config.claims_per_speaker_min
-    max_claims = config.claims_per_speaker_max
+    min_statements = config.statements_per_speaker_min
+    max_statements = config.statements_per_speaker_max
 
-    # Generate bundles of size min_claims to max_claims
-    for bundle_size in range(min_claims, max_claims + 1):
+    # Generate bundles of size min_statements to max_statements
+    for bundle_size in range(min_statements, max_statements + 1):
         # Sample combinations (don't enumerate all if too many)
-        if len(available_claims) < 20:
+        if len(available_statements) < 20:
             # Small library: enumerate all combinations
-            for bundle in combinations(available_claims, bundle_size):
+            for bundle in combinations(available_statements, bundle_size):
                 bundle_list = list(bundle)
                 # Check consistency with W_star
                 all_true = all(
-                    claim.evaluate_on_assignment(W_star) for claim in bundle_list
+                    statement.evaluate_on_assignment(W_star)
+                    for statement in bundle_list
                 )
 
                 if can_lie:
                     # Wolf or minion: at least one must be false
                     if not all_true:
-                        # Filter out bundles with contradictory claims (would make it obvious they're a werewolf/minion)
-                        if bundle_has_contradictory_claims(bundle_list, truth_cache):
+                        # Filter out bundles with contradictory statements (would make it obvious they're a werewolf/minion)
+                        if bundle_has_contradictory_statements(
+                            bundle_list, truth_cache
+                        ):
                             continue
-                        # Filter redundant claims before adding
-                        filtered_bundle = filter_redundant_claims(
+                        # Filter redundant statements before adding
+                        filtered_bundle = filter_redundant_statements(
                             bundle_list, truth_cache
                         )
                         # Only add if bundle meets minimum size requirement after filtering
-                        if len(filtered_bundle) >= min_claims:
+                        if len(filtered_bundle) >= min_statements:
                             candidate_bundles.append(filtered_bundle)
                 else:
                     # Human: all must be true
                     if all_true:
-                        # Filter redundant claims before adding
-                        filtered_bundle = filter_redundant_claims(
+                        # Filter redundant statements before adding
+                        filtered_bundle = filter_redundant_statements(
                             bundle_list, truth_cache
                         )
                         # Only add if bundle meets minimum size requirement after filtering
-                        if len(filtered_bundle) >= min_claims:
+                        if len(filtered_bundle) >= min_statements:
                             candidate_bundles.append(filtered_bundle)
         else:
             # Large library: sample randomly
             for _ in range(config.greedy_candidate_pool_size):
-                bundle = random.sample(available_claims, bundle_size)
+                bundle = random.sample(available_statements, bundle_size)
                 bundle_list = list(bundle)
                 all_true = all(
-                    claim.evaluate_on_assignment(W_star) for claim in bundle_list
+                    statement.evaluate_on_assignment(W_star)
+                    for statement in bundle_list
                 )
 
                 if can_lie:
                     if not all_true:
-                        # Filter out bundles with contradictory claims (would make it obvious they're a werewolf/minion)
-                        if bundle_has_contradictory_claims(bundle_list, truth_cache):
+                        # Filter out bundles with contradictory statements (would make it obvious they're a werewolf/minion)
+                        if bundle_has_contradictory_statements(
+                            bundle_list, truth_cache
+                        ):
                             continue
-                        # Filter redundant claims before adding
-                        filtered_bundle = filter_redundant_claims(
+                        # Filter redundant statements before adding
+                        filtered_bundle = filter_redundant_statements(
                             bundle_list, truth_cache
                         )
                         # Only add if bundle meets minimum size requirement after filtering
-                        if len(filtered_bundle) >= min_claims:
+                        if len(filtered_bundle) >= min_statements:
                             candidate_bundles.append(filtered_bundle)
                 else:
                     if all_true:
-                        # Filter redundant claims before adding
-                        filtered_bundle = filter_redundant_claims(
+                        # Filter redundant statements before adding
+                        filtered_bundle = filter_redundant_statements(
                             bundle_list, truth_cache
                         )
                         # Only add if bundle meets minimum size requirement after filtering
-                        if len(filtered_bundle) >= min_claims:
+                        if len(filtered_bundle) >= min_statements:
                             candidate_bundles.append(filtered_bundle)
 
-    # Preference: if we have enough options, avoid bundles where claim 1 and claim 2
+    # Preference: if we have enough options, avoid bundles where statement 1 and statement 2
     # talk about the exact same two people (better narrative variety).
-    if min_claims >= 2 and candidate_bundles:
+    if min_statements >= 2 and candidate_bundles:
         good = [b for b in candidate_bundles if not _bundle_reuses_same_two_people(b)]
         if good:
             return good
@@ -421,17 +437,17 @@ def list_candidate_bundles_for_speaker(
 
 
 def compute_bundle_all_true_mask(
-    bundle: list["Claim"],
-    truth_cache: ClaimTruthTableCache,
+    bundle: list["Statement"],
+    truth_cache: StatementTruthTableCache,
 ) -> int:
-    """Compute the bitmask of assignments where all claims in bundle are true.
+    """Compute the bitmask of assignments where all statements in bundle are true.
 
     Args:
-        bundle: List of claims
+        bundle: List of statements
         truth_cache: Truth table cache
 
     Returns:
-        Bitmask where bit i is set if all claims are true under assignment i
+        Bitmask where bit i is set if all statements are true under assignment i
     """
     N = truth_cache.N
     num_assignments = 1 << N  # 2^N assignments
@@ -444,9 +460,9 @@ def compute_bundle_all_true_mask(
     all_assignments_mask = (1 << num_assignments) - 1
     result_mask = all_assignments_mask
 
-    # Intersect with truth mask of each claim
-    for claim in bundle:
-        truth_mask = truth_cache.get_truth_mask(claim)
+    # Intersect with truth mask of each statement
+    for statement in bundle:
+        truth_mask = truth_cache.get_truth_mask(statement)
         result_mask &= truth_mask
 
     return result_mask
@@ -454,22 +470,22 @@ def compute_bundle_all_true_mask(
 
 def compute_speaker_compatibility_mask(
     speaker_index: int,
-    bundle: list["Claim"],
+    bundle: list["Statement"],
     human_mask: int,
     wolf_mask: int,
     minion_mask: int | None,
-    truth_cache: ClaimTruthTableCache,
+    truth_cache: StatementTruthTableCache,
 ) -> int:
     """Compute compatibility mask for a speaker with a given bundle.
 
     An assignment is compatible if it satisfies the truthfulness rule:
-    - Humans: AND(claims) == True
-    - Werewolves and minions: AND(claims) == False
-    - So: AND(claims) == NOT(W[speaker]) AND NOT(M[speaker])
+    - Humans: AND(statements) == True
+    - Werewolves and minions: AND(statements) == False
+    - So: AND(statements) == NOT(W[speaker]) AND NOT(M[speaker])
 
     Args:
         speaker_index: Index of the speaker
-        bundle: List of claims made by the speaker
+        bundle: List of statements made by the speaker
         human_mask: Precomputed mask of assignments where speaker is human
         wolf_mask: Precomputed mask of assignments where speaker is wolf
         minion_mask: Precomputed mask of assignments where speaker is minion (None if minions disabled)
@@ -498,14 +514,14 @@ def compute_speaker_compatibility_mask(
     return compat_mask
 
 
-def greedy_assign_claims_until_unique(
+def greedy_assign_statements_until_unique(
     W_star: tuple[bool, ...],
     M_star: tuple[bool, ...],
-    candidate_bundles_by_speaker: list[list[list["Claim"]]],
-    truth_cache: ClaimTruthTableCache,
+    candidate_bundles_by_speaker: list[list[list["Statement"]]],
+    truth_cache: StatementTruthTableCache,
     config: GenerationConfig,
 ) -> Puzzle | None:
-    """Greedily assign claim bundles until uniqueness is achieved.
+    """Greedily assign statement bundles until uniqueness is achieved.
 
     Args:
         W_star: Target werewolf assignment
@@ -534,7 +550,7 @@ def greedy_assign_claims_until_unique(
     remaining_mask = all_assignments_mask
 
     # Track assigned bundles
-    assigned_bundles: list[list["Claim"] | None] = [None] * N
+    assigned_bundles: list[list["Statement"] | None] = [None] * N
     unassigned_speakers = list(range(N))
 
     # Phase 1: Greedy assignment until uniqueness is achieved
@@ -557,7 +573,7 @@ def greedy_assign_claims_until_unique(
             # Try each candidate bundle
             for bundle in candidate_bundles:
                 # Ensure bundle meets minimum size requirement
-                if len(bundle) < config.claims_per_speaker_min:
+                if len(bundle) < config.statements_per_speaker_min:
                     continue
 
                 minion_mask = (
@@ -622,7 +638,7 @@ def greedy_assign_claims_until_unique(
             # Try each candidate bundle
             for bundle in candidate_bundles:
                 # Ensure bundle meets minimum size requirement
-                if len(bundle) < config.claims_per_speaker_min:
+                if len(bundle) < config.statements_per_speaker_min:
                     continue
 
                 minion_mask = (
@@ -670,29 +686,29 @@ def greedy_assign_claims_until_unique(
     names = get_default_names(N)
     villagers = [Villager(i, names[i]) for i in range(N)]
 
-    # Filter out None bundles and redundant claims (shouldn't happen, but safety check)
-    claims_by_speaker = []
-    min_claims = config.claims_per_speaker_min
+    # Filter out None bundles and redundant statements (shouldn't happen, but safety check)
+    statements_by_speaker = []
+    min_statements = config.statements_per_speaker_min
     for bundle in assigned_bundles:
         if bundle is None:
             # This shouldn't happen, but if it does, we can't meet the minimum requirement
             return None
         else:
-            # Filter redundant claims one more time before finalizing
-            filtered_bundle = filter_redundant_claims(bundle, truth_cache)
+            # Filter redundant statements one more time before finalizing
+            filtered_bundle = filter_redundant_statements(bundle, truth_cache)
             # Ensure bundle still meets minimum size requirement after filtering
-            if len(filtered_bundle) < min_claims:
+            if len(filtered_bundle) < min_statements:
                 return None  # Bundle doesn't meet minimum requirement
-            claims_by_speaker.append(filtered_bundle)
+            statements_by_speaker.append(filtered_bundle)
 
-    # Final verification: ensure all villagers have at least min_claims
-    for i, claims in enumerate(claims_by_speaker):
-        if len(claims) < min_claims:
+    # Final verification: ensure all villagers have at least min_statements
+    for i, statements in enumerate(statements_by_speaker):
+        if len(statements) < min_statements:
             return None  # Villager doesn't meet minimum requirement
 
     puzzle = Puzzle(
         villagers=villagers,
-        claims_by_speaker=claims_by_speaker,
+        statements_by_speaker=statements_by_speaker,
         solution_assignment=W_star,
         minion_assignment=M_star if config.has_minion else None,
     )
@@ -702,7 +718,7 @@ def greedy_assign_claims_until_unique(
 
 def generate_puzzle(
     config: GenerationConfig,
-    truth_cache: ClaimTruthTableCache,
+    truth_cache: StatementTruthTableCache,
 ) -> Puzzle | None:
     """Generate a puzzle with unique solution.
 
@@ -717,8 +733,8 @@ def generate_puzzle(
         # Step 1: Choose target assignment (both werewolf and minion)
         W_star, M_star = choose_target_assignment(config)
 
-        # Step 2: Build claim library
-        claim_library = build_claim_library(config)
+        # Step 2: Build statement library
+        statement_library = build_statement_library(config)
 
         # Step 3: Generate candidate bundles for each speaker
         candidate_bundles_by_speaker = []
@@ -727,14 +743,14 @@ def generate_puzzle(
                 speaker_idx,
                 W_star,
                 M_star,
-                claim_library,
+                statement_library,
                 truth_cache,
                 config,
             )
             candidate_bundles_by_speaker.append(bundles)
 
         # Step 4: Greedy assignment
-        puzzle = greedy_assign_claims_until_unique(
+        puzzle = greedy_assign_statements_until_unique(
             W_star,
             M_star,
             candidate_bundles_by_speaker,

@@ -4,16 +4,16 @@ You will receive the inspector’s raw notes for each villager. The notes are lo
 
 ### Task
 
-For **each villager**, rewrite their claims to be:
+For **each villager**, rewrite their statements to be:
 
 - Natural, grounded, and motivated (why they say it), using the **villager’s profession** to justify how they know or suspect things.
 - As **short** as possible.
 - **Only what the villager says** (no narrator text, no stage directions, no descriptions outside their speech).
-- The **second claim must connect to the first**, especially if they mention the same person.
+- The **second statement must connect to the first**, especially if they mention the same person.
 
 ### Hard logic requirement (do not break this)
 
-Each rewritten claim must end with a **clear logical statement** that preserves the original proposition (in plain language).
+Each rewritten statement must end with a **clear logical statement** that preserves the original proposition (in plain language).
 
 Critical: the logical statement must be the **final sentence**, written **fluently in-character**, with **no label** like “Logic:”, no brackets, and no meta-formatting.
 Example ending sentence: “So if X is a werewolf, Y is too.”
@@ -36,8 +36,8 @@ If the original note says the number of werewolves is even/odd, express it concr
 
 For each villager, output exactly two lines:
 
-- `Claim 1: ...` (ending with the logical final sentence)
-- `Claim 2: ...` (ending with the logical final sentence)
+- `Statement 1: ...` (ending with the logical final sentence)
+- `Statement 2: ...` (ending with the logical final sentence)
 
 No extra headers, no extra commentary.
 

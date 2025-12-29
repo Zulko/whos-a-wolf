@@ -8,14 +8,14 @@ if TYPE_CHECKING:
 
 class PuzzleRenderer:
     """Renderer for werewolf puzzles."""
-    
+
     @staticmethod
     def render_to_text(puzzle: "Puzzle") -> str:
         """Render puzzle to plain text format.
-        
+
         Args:
             puzzle: The puzzle to render
-            
+
         Returns:
             Plain text representation
         """
@@ -26,48 +26,50 @@ class PuzzleRenderer:
         lines.append("")
         lines.append("You arrive at a village with the following villagers:")
         lines.append("")
-        
+
         for villager in puzzle.villagers:
             lines.append(f"  {villager.index + 1}. {villager.name}")
-        
+
         lines.append("")
         has_minion = puzzle.minion_assignment is not None
         if has_minion:
             lines.append("Each villager is either a Human (always tells the truth),")
             lines.append("a Werewolf (at least one thing they say is wrong),")
-            lines.append("or a Minion (not a werewolf, but at least one thing they say is wrong).")
+            lines.append(
+                "or a Minion (not a werewolf, but at least one thing they say is wrong)."
+            )
             lines.append("There is exactly one minion among the non-werewolves.")
         else:
             lines.append("Each villager is either a Human (always tells the truth)")
             lines.append("or a Werewolf (at least one thing they say is wrong).")
         lines.append("")
-        lines.append("The villagers make the following claims:")
+        lines.append("The villagers make the following statements:")
         lines.append("")
-        
+
         for villager in puzzle.villagers:
-            claims = puzzle.claims_by_speaker[villager.index]
-            if not claims:
+            statements = puzzle.statements_by_speaker[villager.index]
+            if not statements:
                 continue
-            
+
             lines.append(f"{villager.name} says:")
             names = [v.name for v in puzzle.villagers]
-            for i, claim in enumerate(claims, 1):
-                lines.append(f"  {i}. {claim.to_english(names)}")
+            for i, statement in enumerate(statements, 1):
+                lines.append(f"  {i}. {statement.to_english(names)}")
             lines.append("")
-        
+
         lines.append("=" * 60)
         lines.append("Can you determine who is a werewolf?")
         lines.append("=" * 60)
-        
+
         return "\n".join(lines)
-    
+
     @staticmethod
     def render_to_markdown(puzzle: "Puzzle") -> str:
         """Render puzzle to markdown format.
-        
+
         Args:
             puzzle: The puzzle to render
-            
+
         Returns:
             Markdown representation
         """
@@ -76,45 +78,49 @@ class PuzzleRenderer:
         lines.append("")
         lines.append("You arrive at a village with the following villagers:")
         lines.append("")
-        
+
         for villager in puzzle.villagers:
             lines.append(f"- **{villager.name}**")
-        
+
         lines.append("")
         has_minion = puzzle.minion_assignment is not None
         if has_minion:
-            lines.append("Each villager is either a **Human** (always tells the truth),")
+            lines.append(
+                "Each villager is either a **Human** (always tells the truth),"
+            )
             lines.append("a **Werewolf** (at least one thing they say is wrong),")
-            lines.append("or a **Minion** (not a werewolf, but at least one thing they say is wrong).")
+            lines.append(
+                "or a **Minion** (not a werewolf, but at least one thing they say is wrong)."
+            )
             lines.append("There is exactly one minion among the non-werewolves.")
         else:
             lines.append("Each villager is either a **Human** (always tells the truth)")
             lines.append("or a **Werewolf** (at least one thing they say is wrong).")
         lines.append("")
-        lines.append("## Claims")
+        lines.append("## Statements")
         lines.append("")
-        
+
         for villager in puzzle.villagers:
-            claims = puzzle.claims_by_speaker[villager.index]
-            if not claims:
+            statements = puzzle.statements_by_speaker[villager.index]
+            if not statements:
                 continue
-            
+
             lines.append(f"### {villager.name}")
             lines.append("")
             names = [v.name for v in puzzle.villagers]
-            if len(claims) == 1:
-                # Single claim: use quote format
-                lines.append(f"> {claims[0].to_english(names)}")
+            if len(statements) == 1:
+                # Single statement: use quote format
+                lines.append(f"> {statements[0].to_english(names)}")
             else:
-                # Multiple claims: use numbered list
-                for i, claim in enumerate(claims, 1):
-                    lines.append(f"{i}. {claim.to_english(names)}")
+                # Multiple statements: use numbered list
+                for i, statement in enumerate(statements, 1):
+                    lines.append(f"{i}. {statement.to_english(names)}")
             lines.append("")
-        
+
         lines.append("---")
         lines.append("")
         lines.append("**Can you determine who is a werewolf?**")
-        
+
         if puzzle.solution_assignment:
             lines.append("")
             lines.append("---")
@@ -132,7 +138,7 @@ class PuzzleRenderer:
                     lines.append(f"- {name}")
             else:
                 lines.append("There are no werewolves - all villagers are human!")
-            
+
             if puzzle.minion_assignment:
                 minions = [
                     puzzle.villagers[i].name
@@ -144,6 +150,5 @@ class PuzzleRenderer:
                     lines.append("The minion is:")
                     for name in minions:
                         lines.append(f"- {name}")
-        
-        return "\n".join(lines)
 
+        return "\n".join(lines)
