@@ -1,1 +1,1 @@
-use `uv run` for all python commands
+In python, use `uv run` for all python commands

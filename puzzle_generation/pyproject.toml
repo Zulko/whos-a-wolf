@@ -1,7 +1,7 @@
 [project]
-name = "werewolf"
+name = "who-is-a-wolf"
 version = "0.1.0"
-description = "A werewolf puzzle solver and generator"
+description = "A who-is-a-liar puzzle solver and generator"
 requires-python = ">=3.10"
 dependencies = [
     "z3-solver",

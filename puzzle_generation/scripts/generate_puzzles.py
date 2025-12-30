@@ -19,9 +19,6 @@ except ImportError:
         return iterable
 
 
-# Add parent directory to path to import from src
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from src.generator import build_statement_library, generate_puzzle
 from src.models import GenerationConfig
 from src.truth_cache import StatementTruthTableCache
@@ -66,7 +63,7 @@ def main() -> None:
         "--output-dir",
         type=str,
         default=None,
-        help="Output directory (default: analysis/outputs/)",
+        help="Output directory (default: scripts/outputs/)",
     )
     parser.add_argument(
         "--cpus",

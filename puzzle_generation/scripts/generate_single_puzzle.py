@@ -4,10 +4,10 @@ import argparse
 import sys
 from pathlib import Path
 
-from .generator import generate_puzzle
-from .models import GenerationConfig
-from .render import PuzzleRenderer
-from .truth_cache import StatementTruthTableCache
+from src.generator import build_statement_library, generate_puzzle
+from src.models import GenerationConfig
+from src.render import PuzzleRenderer
+from src.truth_cache import StatementTruthTableCache
 
 
 def main() -> None:
@@ -112,8 +112,6 @@ def main() -> None:
     cache_path = Path(args.cache_file)
     if args.rebuild_cache or not cache_path.exists():
         print(f"Building truth cache for N={config.N}...", file=sys.stderr)
-        from .generator import build_statement_library
-
         statement_library = build_statement_library(config)
         truth_cache = StatementTruthTableCache.build_for_statement_library(
             statement_library, config.N
@@ -130,8 +128,6 @@ def main() -> None:
                     file=sys.stderr,
                 )
                 print("Rebuilding cache...", file=sys.stderr)
-                from .generator import build_statement_library
-
                 statement_library = build_statement_library(config)
                 truth_cache = StatementTruthTableCache.build_for_statement_library(
                     statement_library, config.N
@@ -140,8 +136,6 @@ def main() -> None:
         except Exception as e:
             print(f"Error loading cache: {e}", file=sys.stderr)
             print("Rebuilding cache...", file=sys.stderr)
-            from .generator import build_statement_library
-
             statement_library = build_statement_library(config)
             truth_cache = StatementTruthTableCache.build_for_statement_library(
                 statement_library, config.N
