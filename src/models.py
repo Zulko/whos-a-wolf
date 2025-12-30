@@ -47,6 +47,18 @@ class Puzzle:
     solution_assignment: tuple[bool, ...] | None = None
     shill_assignment: tuple[bool, ...] | None = None
 
+    def to_short_statements_string(self) -> str:
+        """Return a short string representation of all statements.
+
+        Returns:
+            String like "I-5-7_N-3-4_B-0-1" where statements are separated by underscores
+        """
+        all_statements = []
+        for bundle in self.statements_by_speaker:
+            for stmt in bundle:
+                all_statements.append(stmt.to_short_string())
+        return "_".join(all_statements)
+
     def to_dict(self) -> dict:
         """Convert puzzle to dictionary.
 

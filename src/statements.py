@@ -74,6 +74,15 @@ class Statement(ABC):
         """
         pass
 
+    @abstractmethod
+    def to_short_string(self) -> str:
+        """Return a short string representation of this statement.
+
+        Returns:
+            Short string like "I-5-7" for IfAThenB(5,7) or "N-3-4" for Neither(3,4)
+        """
+        pass
+
     @classmethod
     def from_dict(cls, data: dict) -> "Statement":
         """Create statement from dictionary.
@@ -121,6 +130,82 @@ class Statement(ABC):
         else:
             raise ValueError(f"Unknown statement type: {stmt_type}")
 
+    @classmethod
+    def from_short_string(cls, short_str: str) -> "Statement":
+        """Create statement from short string representation.
+
+        Args:
+            short_str: Short string like "I-5-7" or "N-3-4" or "E-0,1,2-2"
+
+        Returns:
+            Statement instance
+
+        Raises:
+            ValueError: If the short string format is invalid
+        """
+        parts = short_str.split("-")
+        if len(parts) < 2:
+            raise ValueError(f"Invalid short string format: {short_str}")
+
+        code = parts[0]
+
+        # Relationship statements: code-a-b
+        if code == "I":  # IfAThenB
+            if len(parts) != 3:
+                raise ValueError(f"Invalid IfAThenB format: {short_str}")
+            return IfAThenB(int(parts[1]), int(parts[2]))
+        elif code == "B":  # BothOrNeither
+            if len(parts) != 3:
+                raise ValueError(f"Invalid BothOrNeither format: {short_str}")
+            return BothOrNeither(int(parts[1]), int(parts[2]))
+        elif code == "A":  # AtLeastOne
+            if len(parts) != 3:
+                raise ValueError(f"Invalid AtLeastOne format: {short_str}")
+            return AtLeastOne(int(parts[1]), int(parts[2]))
+        elif code == "X":  # ExactlyOne
+            if len(parts) != 3:
+                raise ValueError(f"Invalid ExactlyOne format: {short_str}")
+            return ExactlyOne(int(parts[1]), int(parts[2]))
+        elif code == "F":  # IfNotAThenB
+            if len(parts) != 3:
+                raise ValueError(f"Invalid IfNotAThenB format: {short_str}")
+            return IfNotAThenB(int(parts[1]), int(parts[2]))
+        elif code == "N":  # Neither
+            if len(parts) != 3:
+                raise ValueError(f"Invalid Neither format: {short_str}")
+            return Neither(int(parts[1]), int(parts[2]))
+        # Count statements
+        elif code == "E":  # ExactlyKWerewolves: E-scope-count (scope uses dots)
+            if len(parts) != 3:
+                raise ValueError(f"Invalid ExactlyKWerewolves format: {short_str}")
+            scope = tuple(int(x) for x in parts[1].split("."))
+            count = int(parts[2])
+            return ExactlyKWerewolves(scope, count)
+        elif code == "M":  # AtMostKWerewolves: M-scope-count (scope uses dots)
+            if len(parts) != 3:
+                raise ValueError(f"Invalid AtMostKWerewolves format: {short_str}")
+            scope = tuple(int(x) for x in parts[1].split("."))
+            count = int(parts[2])
+            return AtMostKWerewolves(scope, count)
+        elif code == "L":  # AtLeastKWerewolves: L-scope-count (scope uses dots)
+            if len(parts) != 3:
+                raise ValueError(f"Invalid AtLeastKWerewolves format: {short_str}")
+            scope = tuple(int(x) for x in parts[1].split("."))
+            count = int(parts[2])
+            return AtLeastKWerewolves(scope, count)
+        elif code == "V":  # EvenNumberOfWerewolves: V-scope (scope uses dots)
+            if len(parts) != 2:
+                raise ValueError(f"Invalid EvenNumberOfWerewolves format: {short_str}")
+            scope = tuple(int(x) for x in parts[1].split("."))
+            return EvenNumberOfWerewolves(scope)
+        elif code == "O":  # OddNumberOfWerewolves: O-scope (scope uses dots)
+            if len(parts) != 2:
+                raise ValueError(f"Invalid OddNumberOfWerewolves format: {short_str}")
+            scope = tuple(int(x) for x in parts[1].split("."))
+            return OddNumberOfWerewolves(scope)
+        else:
+            raise ValueError(f"Unknown statement code: {code}")
+
     def __hash__(self) -> int:
         """Hash based on statement_id for use in sets/dicts."""
         return hash(self.statement_id)
@@ -161,6 +246,15 @@ class RelationshipStatement(Statement):
             "b_index": self.b_index,
         }
 
+    @abstractmethod
+    def to_short_string(self) -> str:
+        """Return a short string representation of this relationship statement.
+
+        Returns:
+            Short string like "I-5-7" for IfAThenB(5,7)
+        """
+        pass
+
 
 class CountStatement(Statement):
     """Base class for statements about counts of werewolves."""
@@ -189,6 +283,15 @@ class CountStatement(Statement):
             "scope_indices": list(self.scope_indices),  # Convert tuple to list for JSON
         }
 
+    @abstractmethod
+    def to_short_string(self) -> str:
+        """Return a short string representation of this count statement.
+
+        Returns:
+            Short string like "E-0,1,2-2" for ExactlyKWerewolves((0,1,2), 2)
+        """
+        pass
+
 
 # Relationship Statement Subclasses
 
@@ -215,6 +318,10 @@ class IfAThenB(RelationshipStatement):
 
     def complexity_cost(self) -> int:
         return 1
+
+    def to_short_string(self) -> str:
+        """Return short string representation: I-a-b"""
+        return f"I-{self.a_index}-{self.b_index}"
 
 
 class BothOrNeither(RelationshipStatement):
@@ -244,6 +351,10 @@ class BothOrNeither(RelationshipStatement):
     def complexity_cost(self) -> int:
         return 1
 
+    def to_short_string(self) -> str:
+        """Return short string representation: B-a-b"""
+        return f"B-{self.a_index}-{self.b_index}"
+
 
 class AtLeastOne(RelationshipStatement):
     """Semantics: W[a] OR W[b]"""
@@ -271,6 +382,10 @@ class AtLeastOne(RelationshipStatement):
 
     def complexity_cost(self) -> int:
         return 1
+
+    def to_short_string(self) -> str:
+        """Return short string representation: A-a-b"""
+        return f"A-{self.a_index}-{self.b_index}"
 
 
 class ExactlyOne(RelationshipStatement):
@@ -300,6 +415,10 @@ class ExactlyOne(RelationshipStatement):
     def complexity_cost(self) -> int:
         return 1
 
+    def to_short_string(self) -> str:
+        """Return short string representation: X-a-b"""
+        return f"X-{self.a_index}-{self.b_index}"
+
 
 class IfNotAThenB(RelationshipStatement):
     """Semantics: (NOT W[a]) => W[b]"""
@@ -323,6 +442,10 @@ class IfNotAThenB(RelationshipStatement):
 
     def complexity_cost(self) -> int:
         return 1
+
+    def to_short_string(self) -> str:
+        """Return short string representation: F-a-b"""
+        return f"F-{self.a_index}-{self.b_index}"
 
 
 class Neither(RelationshipStatement):
@@ -351,6 +474,10 @@ class Neither(RelationshipStatement):
 
     def complexity_cost(self) -> int:
         return 2  # Higher cost as this is a strong statement
+
+    def to_short_string(self) -> str:
+        """Return short string representation: N-a-b"""
+        return f"N-{self.a_index}-{self.b_index}"
 
 
 # Count Statement Subclasses
@@ -398,6 +525,11 @@ class ExactlyKWerewolves(CountStatement):
     def complexity_cost(self) -> int:
         # Higher cost for count statements, especially exact counts
         return 3
+
+    def to_short_string(self) -> str:
+        """Return short string representation: E-scope-count (scope uses dots, e.g., E-0.1.2-2)"""
+        scope_str = ".".join(map(str, sorted(self.scope_indices)))
+        return f"E-{scope_str}-{self.count}"
 
     def to_dict(self) -> dict:
         """Convert exactly-k statement to dictionary.
@@ -454,6 +586,11 @@ class AtMostKWerewolves(CountStatement):
     def complexity_cost(self) -> int:
         return 2
 
+    def to_short_string(self) -> str:
+        """Return short string representation: M-scope-count (scope uses dots, e.g., M-0.1-1)"""
+        scope_str = ".".join(map(str, sorted(self.scope_indices)))
+        return f"M-{scope_str}-{self.count}"
+
     def to_dict(self) -> dict:
         """Convert at-most-k statement to dictionary.
 
@@ -509,6 +646,11 @@ class AtLeastKWerewolves(CountStatement):
     def complexity_cost(self) -> int:
         return 2
 
+    def to_short_string(self) -> str:
+        """Return short string representation: L-scope-count (scope uses dots, e.g., L-0.1.2.3-2)"""
+        scope_str = ".".join(map(str, sorted(self.scope_indices)))
+        return f"L-{scope_str}-{self.count}"
+
     def to_dict(self) -> dict:
         """Convert at-least-k statement to dictionary.
 
@@ -554,6 +696,11 @@ class EvenNumberOfWerewolves(CountStatement):
     def complexity_cost(self) -> int:
         return 2
 
+    def to_short_string(self) -> str:
+        """Return short string representation: V-scope (scope uses dots, e.g., V-0.1.2)"""
+        scope_str = ".".join(map(str, sorted(self.scope_indices)))
+        return f"V-{scope_str}"
+
 
 class OddNumberOfWerewolves(CountStatement):
     """Semantics: SUM(W[i] for i in scope) % 2 == 1"""
@@ -586,3 +733,8 @@ class OddNumberOfWerewolves(CountStatement):
 
     def complexity_cost(self) -> int:
         return 2
+
+    def to_short_string(self) -> str:
+        """Return short string representation: O-scope (scope uses dots, e.g., O-0.1)"""
+        scope_str = ".".join(map(str, sorted(self.scope_indices)))
+        return f"O-{scope_str}"

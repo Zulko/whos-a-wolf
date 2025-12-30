@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import multiprocessing
 import sys
 from pathlib import Path
 
@@ -26,6 +27,25 @@ from src.models import GenerationConfig
 from src.truth_cache import StatementTruthTableCache
 
 
+def _generate_one_puzzle_worker(args: tuple) -> tuple[dict | None, str | None]:
+    """Worker function to generate a single puzzle.
+
+    Args:
+        args: Tuple of (config, truth_cache)
+
+    Returns:
+        Tuple of (puzzle_dict, statements_string) or (None, None) if generation failed
+    """
+    config, truth_cache = args
+    puzzle = generate_puzzle(config, truth_cache)
+    if puzzle is None:
+        return None, None
+
+    puzzle_dict = puzzle.to_dict()
+    statements_string = puzzle.to_short_statements_string()
+    return puzzle_dict, statements_string
+
+
 def main() -> None:
     """Generate puzzles for the specified number of characters."""
     parser = argparse.ArgumentParser(description="Generate puzzles for analysis")
@@ -46,15 +66,26 @@ def main() -> None:
         "--output-dir",
         type=str,
         default=None,
-        help="Output directory (default: analysis/)",
+        help="Output directory (default: analysis/outputs/)",
+    )
+    parser.add_argument(
+        "--cpus",
+        type=int,
+        default=1,
+        help="Number of CPUs to use for parallel generation (default: 1)",
     )
 
     args = parser.parse_args()
 
     N = args.characters
     num_puzzles = args.count
-    output_dir = Path(args.output_dir) if args.output_dir else Path(__file__).parent
+    if args.output_dir:
+        output_dir = Path(args.output_dir)
+    else:
+        output_dir = Path(__file__).parent / "outputs"
+        output_dir.mkdir(exist_ok=True)
     output_file = output_dir / f"games_{N}.jsonl"
+    statements_only_file = output_dir / f"games_{N}_statements_only.txt"
 
     # Create config
     config = GenerationConfig(
@@ -103,29 +134,67 @@ def main() -> None:
             truth_cache.save_to_json(str(cache_path))
 
     # Generate puzzles
-    print(f"Generating {num_puzzles} puzzles for N={N}...", file=sys.stderr)
+    num_cpus = max(1, args.cpus)
+    if num_cpus > 1:
+        print(
+            f"Generating {num_puzzles} puzzles for N={N} using {num_cpus} CPUs...",
+            file=sys.stderr,
+        )
+    else:
+        print(f"Generating {num_puzzles} puzzles for N={N}...", file=sys.stderr)
+
     successful = 0
     failed = 0
 
-    with open(output_file, "w") as f:
-        for i in tqdm(range(num_puzzles), desc="Generating puzzles", unit="puzzle"):
-            puzzle = generate_puzzle(config, truth_cache)
-            if puzzle is None:
-                failed += 1
-                continue
+    with open(output_file, "w") as f, open(statements_only_file, "w") as f_statements:
+        if num_cpus > 1:
+            # Parallel generation
+            # Create a list of arguments for each worker (config and truth_cache are the same for all)
+            worker_args = [(config, truth_cache) for _ in range(num_puzzles)]
+            with multiprocessing.Pool(processes=num_cpus) as pool:
+                results = pool.imap(_generate_one_puzzle_worker, worker_args)
+                for puzzle_dict, statements_string in tqdm(
+                    results, total=num_puzzles, desc="Generating puzzles", unit="puzzle"
+                ):
+                    if puzzle_dict is None:
+                        failed += 1
+                        continue
 
-            successful += 1
-            # Convert puzzle to dict (includes solutions)
-            puzzle_dict = puzzle.to_dict()
-            # Write as JSON line
-            f.write(json.dumps(puzzle_dict) + "\n")
-            f.flush()
+                    successful += 1
+                    # Write full puzzle as JSON line
+                    f.write(json.dumps(puzzle_dict) + "\n")
+                    f.flush()
+
+                    # Write statements-only as plain text line
+                    f_statements.write(statements_string + "\n")
+                    f_statements.flush()
+        else:
+            # Sequential generation
+            for i in tqdm(range(num_puzzles), desc="Generating puzzles", unit="puzzle"):
+                puzzle = generate_puzzle(config, truth_cache)
+                if puzzle is None:
+                    failed += 1
+                    continue
+
+                successful += 1
+                # Convert puzzle to dict (includes solutions)
+                puzzle_dict = puzzle.to_dict()
+                # Write full puzzle as JSON line
+                f.write(json.dumps(puzzle_dict) + "\n")
+                f.flush()
+
+                # Extract only statements as short string
+                statements_string = puzzle.to_short_statements_string()
+                # Write statements-only as plain text line
+                f_statements.write(statements_string + "\n")
+                f_statements.flush()
 
     print(
         f"\nGeneration complete! Successful: {successful}, Failed: {failed}",
         file=sys.stderr,
     )
     print(f"Output written to {output_file}", file=sys.stderr)
+    print(f"Statements-only output written to {statements_only_file}", file=sys.stderr)
 
 
 if __name__ == "__main__":

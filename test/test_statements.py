@@ -2,6 +2,7 @@
 
 import json
 
+from src.models import Puzzle, Villager
 from src.statements import (
     AtLeastKWerewolves,
     AtLeastOne,
@@ -281,4 +282,204 @@ def test_statement_round_trip_preserves_variables_involved():
             f"Variables mismatch for {stmt.__class__.__name__}: "
             f"original={original_vars}, reconstructed={reconstructed_vars}"
         )
+
+
+def test_if_a_then_b_short_string_round_trip():
+    """Test IfAThenB short string round-trip."""
+    stmt = IfAThenB(5, 7)
+    short_str = stmt.to_short_string()
+    assert short_str == "I-5-7"
+    reconstructed = Statement.from_short_string(short_str)
+    assert stmt == reconstructed
+    assert stmt.a_index == reconstructed.a_index
+    assert stmt.b_index == reconstructed.b_index
+
+
+def test_both_or_neither_short_string_round_trip():
+    """Test BothOrNeither short string round-trip."""
+    stmt = BothOrNeither(3, 4)
+    short_str = stmt.to_short_string()
+    assert short_str == "B-3-4"
+    reconstructed = Statement.from_short_string(short_str)
+    assert stmt == reconstructed
+    assert stmt.a_index == reconstructed.a_index
+    assert stmt.b_index == reconstructed.b_index
+
+
+def test_at_least_one_short_string_round_trip():
+    """Test AtLeastOne short string round-trip."""
+    stmt = AtLeastOne(0, 1)
+    short_str = stmt.to_short_string()
+    assert short_str == "A-0-1"
+    reconstructed = Statement.from_short_string(short_str)
+    assert stmt == reconstructed
+    assert stmt.a_index == reconstructed.a_index
+    assert stmt.b_index == reconstructed.b_index
+
+
+def test_exactly_one_short_string_round_trip():
+    """Test ExactlyOne short string round-trip."""
+    stmt = ExactlyOne(2, 3)
+    short_str = stmt.to_short_string()
+    assert short_str == "X-2-3"
+    reconstructed = Statement.from_short_string(short_str)
+    assert stmt == reconstructed
+    assert stmt.a_index == reconstructed.a_index
+    assert stmt.b_index == reconstructed.b_index
+
+
+def test_if_not_a_then_b_short_string_round_trip():
+    """Test IfNotAThenB short string round-trip."""
+    stmt = IfNotAThenB(0, 1)
+    short_str = stmt.to_short_string()
+    assert short_str == "F-0-1"
+    reconstructed = Statement.from_short_string(short_str)
+    assert stmt == reconstructed
+    assert stmt.a_index == reconstructed.a_index
+    assert stmt.b_index == reconstructed.b_index
+
+
+def test_neither_short_string_round_trip():
+    """Test Neither short string round-trip."""
+    stmt = Neither(3, 4)
+    short_str = stmt.to_short_string()
+    assert short_str == "N-3-4"
+    reconstructed = Statement.from_short_string(short_str)
+    assert stmt == reconstructed
+    assert stmt.a_index == reconstructed.a_index
+    assert stmt.b_index == reconstructed.b_index
+
+
+def test_exactly_k_werewolves_short_string_round_trip():
+    """Test ExactlyKWerewolves short string round-trip."""
+    stmt = ExactlyKWerewolves((0, 1, 2), 2)
+    short_str = stmt.to_short_string()
+    assert short_str == "E-0.1.2-2"
+    reconstructed = Statement.from_short_string(short_str)
+    assert stmt == reconstructed
+    assert stmt.scope_indices == reconstructed.scope_indices
+    assert stmt.count == reconstructed.count
+
+
+def test_at_most_k_werewolves_short_string_round_trip():
+    """Test AtMostKWerewolves short string round-trip."""
+    stmt = AtMostKWerewolves((0, 1), 1)
+    short_str = stmt.to_short_string()
+    assert short_str == "M-0.1-1"
+    reconstructed = Statement.from_short_string(short_str)
+    assert stmt == reconstructed
+    assert stmt.scope_indices == reconstructed.scope_indices
+    assert stmt.count == reconstructed.count
+
+
+def test_at_least_k_werewolves_short_string_round_trip():
+    """Test AtLeastKWerewolves short string round-trip."""
+    stmt = AtLeastKWerewolves((0, 1, 2, 3), 2)
+    short_str = stmt.to_short_string()
+    assert short_str == "L-0.1.2.3-2"
+    reconstructed = Statement.from_short_string(short_str)
+    assert stmt == reconstructed
+    assert stmt.scope_indices == reconstructed.scope_indices
+    assert stmt.count == reconstructed.count
+
+
+def test_even_number_of_werewolves_short_string_round_trip():
+    """Test EvenNumberOfWerewolves short string round-trip."""
+    stmt = EvenNumberOfWerewolves((0, 1, 2))
+    short_str = stmt.to_short_string()
+    assert short_str == "V-0.1.2"
+    reconstructed = Statement.from_short_string(short_str)
+    assert stmt == reconstructed
+    assert stmt.scope_indices == reconstructed.scope_indices
+
+
+def test_odd_number_of_werewolves_short_string_round_trip():
+    """Test OddNumberOfWerewolves short string round-trip."""
+    stmt = OddNumberOfWerewolves((0, 1))
+    short_str = stmt.to_short_string()
+    assert short_str == "O-0.1"
+    reconstructed = Statement.from_short_string(short_str)
+    assert stmt == reconstructed
+    assert stmt.scope_indices == reconstructed.scope_indices
+
+
+def test_all_statements_short_string_round_trip():
+    """Test that all statement types support short string round-trip."""
+    statements = [
+        IfAThenB(0, 1),
+        BothOrNeither(2, 3),
+        AtLeastOne(0, 1),
+        ExactlyOne(2, 3),
+        IfNotAThenB(0, 1),
+        Neither(2, 3),
+        ExactlyKWerewolves((0, 1, 2), 2),
+        AtMostKWerewolves((0, 1), 1),
+        AtLeastKWerewolves((0, 1, 2, 3), 2),
+        EvenNumberOfWerewolves((0, 1, 2)),
+        OddNumberOfWerewolves((0, 1)),
+    ]
+
+    for stmt in statements:
+        short_str = stmt.to_short_string()
+        reconstructed = Statement.from_short_string(short_str)
+        assert stmt == reconstructed, (
+            f"Round-trip failed for {stmt.__class__.__name__}: "
+            f"original={stmt.statement_id}, reconstructed={reconstructed.statement_id}"
+        )
+        # Verify evaluation is preserved
+        test_assignment = (True, False, True, False)
+        original_result = stmt.evaluate_on_assignment(test_assignment)
+        reconstructed_result = reconstructed.evaluate_on_assignment(test_assignment)
+        assert original_result == reconstructed_result, (
+            f"Evaluation mismatch for {stmt.__class__.__name__}: "
+            f"original={original_result}, reconstructed={reconstructed_result}"
+        )
+
+
+def test_from_short_string_invalid_format():
+    """Test that from_short_string raises ValueError for invalid formats."""
+    invalid_strings = [
+        "X",  # Too short
+        "I-5",  # Missing second index
+        "E-0,1",  # Missing count
+        "Z-5-7",  # Unknown code
+        "",  # Empty string
+    ]
+
+    for invalid_str in invalid_strings:
+        try:
+            Statement.from_short_string(invalid_str)
+            assert False, f"Should have raised ValueError for: {invalid_str}"
+        except ValueError:
+            pass  # Expected
+
+
+def test_puzzle_to_short_statements_string():
+    """Test Puzzle.to_short_statements_string() method."""
+    villagers = [
+        Villager(0, "Alice"),
+        Villager(1, "Bob"),
+        Villager(2, "Charlie"),
+    ]
+    statements_by_speaker = [
+        [IfAThenB(5, 7)],  # Alice
+        [Neither(3, 4)],  # Bob
+        [BothOrNeither(0, 1), AtLeastOne(2, 3)],  # Charlie
+    ]
+
+    puzzle = Puzzle(
+        villagers=villagers,
+        statements_by_speaker=statements_by_speaker,
+    )
+
+    short_str = puzzle.to_short_statements_string()
+    # Should be: I-5-7_N-3-4_B-0-1_A-2-3
+    # Note: BothOrNeither normalizes indices, so 0,1 stays 0,1
+    # AtLeastOne normalizes indices, so 2,3 stays 2,3
+    expected_parts = ["I-5-7", "N-3-4", "B-0-1", "A-2-3"]
+    actual_parts = short_str.split("_")
+    assert len(actual_parts) == len(expected_parts)
+    assert set(actual_parts) == set(expected_parts), (
+        f"Expected {expected_parts}, got {actual_parts}"
+    )
 

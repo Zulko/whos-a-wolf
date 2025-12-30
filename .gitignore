@@ -52,5 +52,4 @@ htmlcov/
 # Sandbox folder
 .sandbox/
 truth_cache*.json
-analysis/*.jsonl
-analysis/*.png
+analysis/outputs/
