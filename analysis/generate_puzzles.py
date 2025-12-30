@@ -59,12 +59,13 @@ def main() -> None:
     # Create config
     config = GenerationConfig(
         N=N,
-        statements_per_speaker_min=2,
-        statements_per_speaker_max=2,
+        statements_per_speaker_min=1,
+        statements_per_speaker_max=1,
         max_attempts=100,
         has_shill=True,
         min_werewolves=1,
         max_werewolves=N - 1,
+        diverse_statements=True,
     )
 
     # Load or build truth cache

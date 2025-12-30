@@ -514,6 +514,18 @@ def compute_speaker_compatibility_mask(
     return compat_mask
 
 
+def get_statement_types(bundle: list["Statement"]) -> set[str]:
+    """Extract the set of statement type names from a bundle.
+
+    Args:
+        bundle: List of statements
+
+    Returns:
+        Set of statement type names (class names)
+    """
+    return {type(stmt).__name__ for stmt in bundle}
+
+
 def greedy_assign_statements_until_unique(
     W_star: tuple[bool, ...],
     M_star: tuple[bool, ...],
@@ -553,6 +565,9 @@ def greedy_assign_statements_until_unique(
     assigned_bundles: list[list["Statement"] | None] = [None] * N
     unassigned_speakers = list(range(N))
 
+    # Track claimed statement types for diversity enforcement
+    claimed_statement_types: set[str] = set()
+
     # Phase 1: Greedy assignment until uniqueness is achieved
     while unassigned_speakers and remaining_mask != (1 << W_star_index):
         best_speaker = None
@@ -575,6 +590,13 @@ def greedy_assign_statements_until_unique(
                 # Ensure bundle meets minimum size requirement
                 if len(bundle) < config.statements_per_speaker_min:
                     continue
+
+                # Enforce diversity: bundle must contain at least one unclaimed statement type
+                if config.diverse_statements:
+                    bundle_types = get_statement_types(bundle)
+                    # Check if bundle has at least one unclaimed type
+                    if not (bundle_types - claimed_statement_types):
+                        continue  # All types in bundle are already claimed, skip it
 
                 shill_mask = (
                     shill_mask_by_speaker[speaker_idx]
@@ -614,6 +636,9 @@ def greedy_assign_statements_until_unique(
         assigned_bundles[best_speaker] = best_bundle
         remaining_mask = best_new_mask
         unassigned_speakers.remove(best_speaker)
+        # Mark statement types as claimed for diversity enforcement
+        if config.diverse_statements:
+            claimed_statement_types.update(get_statement_types(best_bundle))
 
     # Check if we achieved uniqueness (only W_star_index bit set)
     if remaining_mask != (1 << W_star_index):
@@ -640,6 +665,13 @@ def greedy_assign_statements_until_unique(
                 # Ensure bundle meets minimum size requirement
                 if len(bundle) < config.statements_per_speaker_min:
                     continue
+
+                # Enforce diversity: bundle must contain at least one unclaimed statement type
+                if config.diverse_statements:
+                    bundle_types = get_statement_types(bundle)
+                    # Check if bundle has at least one unclaimed type
+                    if not (bundle_types - claimed_statement_types):
+                        continue  # All types in bundle are already claimed, skip it
 
                 shill_mask = (
                     shill_mask_by_speaker[speaker_idx]
@@ -677,6 +709,9 @@ def greedy_assign_statements_until_unique(
         # Assign the bundle
         assigned_bundles[best_speaker] = best_bundle
         unassigned_speakers.remove(best_speaker)
+        # Mark statement types as claimed for diversity enforcement
+        if config.diverse_statements:
+            claimed_statement_types.update(get_statement_types(best_bundle))
 
     # Final check: ensure uniqueness is maintained
     if remaining_mask != (1 << W_star_index):

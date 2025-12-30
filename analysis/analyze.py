@@ -44,9 +44,13 @@ def plot_analysis_results(results: dict, N: int, output_dir: Path) -> None:
         sorted_keys = sorted(ww_dist.keys(), key=lambda k: int(k))
         counts = [int(k) for k in sorted_keys]
         frequencies = [ww_dist[k] for k in sorted_keys]
-        ax1.bar(counts, frequencies, color="steelblue", edgecolor="black")
+        total = sum(frequencies)
+        percentages = (
+            [100 * f / total for f in frequencies] if total > 0 else frequencies
+        )
+        ax1.bar(counts, percentages, color="steelblue", edgecolor="black")
         ax1.set_xlabel("Number of Werewolves")
-        ax1.set_ylabel("Frequency")
+        ax1.set_ylabel("Percentage (%)")
         ax1.set_title(f"Werewolf Count Distribution ({N} Players)")
         ax1.set_xticks(counts)
         ax1.grid(axis="y", alpha=0.3)
@@ -69,8 +73,10 @@ def plot_analysis_results(results: dict, N: int, output_dir: Path) -> None:
         sorted_items = sorted(stmt_dist.items(), key=lambda x: x[1], reverse=True)
         types = [item[0] for item in sorted_items]
         counts = [item[1] for item in sorted_items]
-        ax2.barh(types, counts, color="forestgreen", edgecolor="black")
-        ax2.set_xlabel("Count")
+        total = sum(counts)
+        percentages = [100 * c / total for c in counts] if total > 0 else counts
+        ax2.barh(types, percentages, color="forestgreen", edgecolor="black")
+        ax2.set_xlabel("Percentage (%)")
         ax2.set_ylabel("Statement Type")
         ax2.set_title("General Statement Type Distribution")
         ax2.grid(axis="x", alpha=0.3)
@@ -86,8 +92,10 @@ def plot_analysis_results(results: dict, N: int, output_dir: Path) -> None:
         sorted_items = sorted(ww_stmt_dist.items(), key=lambda x: x[1], reverse=True)
         types = [item[0] for item in sorted_items]
         counts = [item[1] for item in sorted_items]
-        ax3.barh(types, counts, color="crimson", edgecolor="black")
-        ax3.set_xlabel("Count")
+        total = sum(counts)
+        percentages = [100 * c / total for c in counts] if total > 0 else counts
+        ax3.barh(types, percentages, color="crimson", edgecolor="black")
+        ax3.set_xlabel("Percentage (%)")
         ax3.set_ylabel("Statement Type")
         ax3.set_title("Statement Type Distribution (Werewolves)")
         ax3.grid(axis="x", alpha=0.3)
@@ -103,8 +111,10 @@ def plot_analysis_results(results: dict, N: int, output_dir: Path) -> None:
         sorted_items = sorted(shill_stmt_dist.items(), key=lambda x: x[1], reverse=True)
         types = [item[0] for item in sorted_items]
         counts = [item[1] for item in sorted_items]
-        ax4.barh(types, counts, color="darkorange", edgecolor="black")
-        ax4.set_xlabel("Count")
+        total = sum(counts)
+        percentages = [100 * c / total for c in counts] if total > 0 else counts
+        ax4.barh(types, percentages, color="darkorange", edgecolor="black")
+        ax4.set_xlabel("Percentage (%)")
         ax4.set_ylabel("Statement Type")
         ax4.set_title("Statement Type Distribution (Shills)")
         ax4.grid(axis="x", alpha=0.3)

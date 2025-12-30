@@ -129,6 +129,7 @@ class GenerationConfig:
     min_werewolves: int | None = None
     max_werewolves: int | None = None
     has_shill: bool = False
+    diverse_statements: bool = False
 
     def to_dict(self) -> dict:
         """Convert configuration to dictionary.

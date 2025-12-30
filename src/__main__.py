@@ -81,6 +81,11 @@ def main() -> None:
         default=None,
         help="Maximum number of werewolves in the puzzle (default: no maximum)",
     )
+    parser.add_argument(
+        "--diverse-statements",
+        action="store_true",
+        help="Require each character to use at least one statement type that no other character uses",
+    )
 
     args = parser.parse_args()
 
@@ -100,6 +105,7 @@ def main() -> None:
         has_shill=args.has_shill,
         min_werewolves=args.min_werewolves,
         max_werewolves=max_werewolves,
+        diverse_statements=args.diverse_statements,
     )
 
     # Load or build truth cache
