@@ -27,7 +27,7 @@
 
     // Check: at least one werewolf
     if (werewolfCount === 0) {
-      return "We know that at least one of these villagers is a werewolf";
+      return "We know that at least one of these villagers is a werewolf. Click on the characters to change your suspicions.";
     }
 
     // Check: exactly one shill
@@ -224,10 +224,10 @@
   .intro {
     text-align: left;
     max-width: 800px;
-    margin: 0 0 2rem 0;
-    line-height: 1;
+    margin: 0 auto 2rem auto;
+    line-height: 1.2rem;
     color: var(--text-secondary);
-    font-size: 1.25rem;
+    font-size: 1.35rem;
   }
 
   .villagers-grid {
@@ -258,6 +258,7 @@
     color: var(--error-text);
     margin-bottom: 1rem;
     font-weight: bold;
+    font-size: 1.35rem;
   }
 
   .success-message {
@@ -304,6 +305,19 @@
     main {
       width: 95%;
       padding: 1rem;
+    }
+
+    .intro {
+      font-size: 1rem;
+      line-height: 1.3;
+    }
+
+    h1 {
+      font-size: 1.2rem;
+    }
+
+    .error-message {
+      font-size: 1rem;
     }
   }
 </style>

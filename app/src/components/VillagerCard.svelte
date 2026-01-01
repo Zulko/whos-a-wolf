@@ -58,9 +58,9 @@
     isPulsing = true;
     setTimeout(() => (isPulsing = false), 150);
     if (suspicion === "truthful") {
-      onSuspicionChange("werewolf");
-    } else if (suspicion === "werewolf") {
       onSuspicionChange("shill");
+    } else if (suspicion === "shill") {
+      onSuspicionChange("werewolf");
     } else {
       onSuspicionChange("truthful");
     }
@@ -133,7 +133,7 @@
     max-width: 500px;
     position: relative;
     overflow: visible;
-    height: 70px;
+    height: 80px;
     cursor: pointer;
     transition: box-shadow 0.2s ease;
   }
@@ -164,8 +164,8 @@
   }
 
   .villager-picture {
-    width: 70px;
-    height: 70px;
+    width: 80px;
+    height: 80px;
     border-radius: 0;
     overflow: hidden;
     background-color: var(--card-border, #444);
@@ -206,7 +206,7 @@
     padding: 0.5rem;
     padding-top: 0.25rem;
     position: relative;
-    height: 70px;
+    height: 80px;
     box-sizing: border-box;
   }
 
@@ -221,7 +221,7 @@
     left: 0;
     right: 0;
     z-index: 5;
-    margin-left: -1rem;
+    margin-left: 0.5rem;
     padding-right: 0.5rem;
   }
 
@@ -230,7 +230,7 @@
     background-color: #f5f5dc; /* Beige */
     border: 1px solid #d4c5a9; /* Subtle border */
     border-radius: 2px;
-    font-size: 1rem;
+    font-size: 1.15rem;
     font-weight: normal;
     color: #2c2c2c; /* Blackish */
     white-space: nowrap;
@@ -243,7 +243,7 @@
     padding: 0rem 0.4rem;
     border: 2px solid currentColor;
     border-radius: 4px;
-    font-size: 1rem;
+    font-size: 1.15rem;
     font-weight: bold;
     white-space: nowrap;
     position: relative;
@@ -254,8 +254,8 @@
     text-align: left;
     font-style: italic;
     color: var(--text-secondary, #ddd);
-    line-height: 1.2;
-    font-size: 1rem;
+    line-height: 1rem;
+    font-size: 1.15rem;
     margin: 0;
     margin-top: 3px;
     padding: 0;
@@ -265,5 +265,32 @@
     display: flex;
     align-items: center;
     padding-left: 0.25rem;
+  }
+
+  @media (max-width: 600px) {
+    .villager-card {
+      height: 65px;
+    }
+
+    .villager-picture {
+      width: 65px;
+      height: 65px;
+    }
+
+    .card-content {
+      height: 65px;
+    }
+
+    .name-label {
+      font-size: 0.9rem;
+    }
+
+    .suspicion-label {
+      font-size: 0.9rem;
+    }
+
+    .statement {
+      font-size: 0.9rem;
+    }
   }
 </style>
