@@ -2,6 +2,7 @@ context:
   - All characters live in a 18th-century village.
   - This is for a kid-friendly werewolf game.
   - Use pixel art and cartoonish looks.
+  - Each picture should be 1:1 color pixel art of a character profile (headshot with part of the upper body) with the character looking straight at the camera.
 
 characters:
   - name: Alice Adams

@@ -19,17 +19,19 @@
   function getImagePath() {
     if (isSolved) {
       if (suspicion === "werewolf") {
-        return `/images/${shortName}_werewolf.png`;
+        return `/images/characters/${shortName}_werewolf.jpg`;
       } else if (suspicion === "shill") {
-        return `/images/${shortName}_shill.png`;
+        return `/images/characters/${shortName}_shill.jpg`;
       } else {
-        return `/images/${shortName}_releaved.png`;
+        return `/images/characters/${shortName}_happy.jpg`;
       }
     } else {
       if (suspicion === "truthful") {
-        return `/images/${shortName}_smile.png`;
+        return `/images/characters/${shortName}_neutral.jpg`;
+      } else if (suspicion === "shill") {
+        return `/images/characters/${shortName}_angry.jpg`;
       } else {
-        return `/images/${shortName}_angry.png`;
+        return `/images/characters/${shortName}_furious.jpg`;
       }
     }
   }
@@ -54,7 +56,7 @@
 
   function cycleSuspicion(event) {
     isPulsing = true;
-    setTimeout(() => (isPulsing = false), 600);
+    setTimeout(() => (isPulsing = false), 150);
     if (suspicion === "truthful") {
       onSuspicionChange("werewolf");
     } else if (suspicion === "werewolf") {
@@ -146,7 +148,7 @@
   }
 
   .villager-card.pulse {
-    animation: pulse 0.6s ease;
+    animation: pulse 0.15s ease-out;
   }
 
   @keyframes pulse {
@@ -154,7 +156,7 @@
       transform: scale(1);
     }
     50% {
-      transform: scale(1.05);
+      transform: scale(1.02);
     }
     100% {
       transform: scale(1);

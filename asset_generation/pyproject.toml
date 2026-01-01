@@ -5,9 +5,11 @@ description = "OpenAI-powered character image generation for werewolf game"
 requires-python = ">=3.10"
 dependencies = [
     "openai",
+    "google-genai",
     "pyyaml",
     "pillow",
     "requests",
+    "numpy",
 ]
 
 [build-system]
