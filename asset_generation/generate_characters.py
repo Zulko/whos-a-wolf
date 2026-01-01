@@ -134,8 +134,8 @@ def main():
     parser.add_argument(
         "--size",
         type=str,
-        default="1024x1024",
-        help="Image size in format WxH (default: 1024x1024)",
+        default="256x256",
+        help="Image size in format WxH (default: 256x256)",
     )
     parser.add_argument(
         "--reference-picture",
@@ -157,8 +157,8 @@ def main():
     parser.add_argument(
         "--model",
         type=str,
-        default="dall-e-3",
-        help="DALL-E model to use: dall-e-2 or dall-e-3 (default: dall-e-3)",
+        default="dall-e-2",
+        help="DALL-E model to use: dall-e-2 or dall-e-3 (default: dall-e-2)",
     )
     parser.add_argument(
         "--quality",
