@@ -1,0 +1,21 @@
+[project]
+name = "werewolf-asset-generation"
+version = "0.1.0"
+description = "OpenAI-powered character image generation for werewolf game"
+requires-python = ">=3.10"
+dependencies = [
+    "openai",
+    "pyyaml",
+    "pillow",
+    "requests",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0.0",
+]
+
