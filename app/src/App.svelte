@@ -302,7 +302,7 @@
     }
 
     .intro {
-      font-size: 1rem;
+      font-size: 1.1rem;
       line-height: 1.3;
     }
 
