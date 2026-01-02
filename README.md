@@ -1,6 +1,6 @@
 # Who's a wolf
 
-A find-the-werewolves, knights-and-knaves style puzzle game. A group of villagers make statements, some of them are lying werewolves, and one is a lying non-werewolf shill. The goal is to determine who is a honnest villager, who is the shill, and and who are the werewolves.
+A find-the-werewolves, knights-and-knaves style puzzle game. A group of villagers make statements, some of them are lying werewolves, and one is a lying non-werewolf shill. The goal is to determine who is a honnest villager, who is the shill, and who are the werewolves.
 
 ![screenshot](./docs/screenshot.jpg)
 
