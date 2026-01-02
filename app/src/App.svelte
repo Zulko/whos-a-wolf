@@ -57,12 +57,12 @@
         // Werewolves and shills lie: statement must be FALSE
         if (statementResult) {
           const role = suspicion === "werewolf" ? "werewolf" : "shill";
-          return `You marked ${char.name} as a ${role}, yet their statement is in agreement with the rest of your suspicions.`;
+          return `You suspect ${char.name} of being a ${role}, yet according to your other suspicions, they are not lying.`;
         }
       } else if (suspicion === "truthful") {
         // Truthful villagers tell truth: statement must be TRUE
         if (!statementResult) {
-          return `You marked ${char.name} as truthful, yet their statement doesn't match the rest of your suspicions.`;
+          return `You marked ${char.name} as truthful, yet their statement disagrees with the rest of your suspicions.`;
         }
       }
     }
