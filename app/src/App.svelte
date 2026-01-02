@@ -206,7 +206,7 @@
 
 <style>
   main {
-    max-width: 1200px;
+    max-width: 1000px;
     margin: 0 auto;
     padding: 2rem;
   }
@@ -240,12 +240,6 @@
   @media (min-width: 900px) {
     .villagers-grid {
       grid-template-columns: repeat(2, 1fr);
-    }
-  }
-
-  @media (min-width: 1400px) {
-    .villagers-grid {
-      grid-template-columns: repeat(3, 1fr);
     }
   }
 

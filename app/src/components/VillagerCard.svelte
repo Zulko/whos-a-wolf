@@ -230,7 +230,7 @@
     background-color: #f5f5dc; /* Beige */
     border: 1px solid #d4c5a9; /* Subtle border */
     border-radius: 2px;
-    font-size: 1.15rem;
+    font-size: 1.3rem;
     font-weight: normal;
     color: #2c2c2c; /* Blackish */
     white-space: nowrap;
@@ -243,7 +243,7 @@
     padding: 0rem 0.4rem;
     border: 2px solid currentColor;
     border-radius: 4px;
-    font-size: 1.15rem;
+    font-size: 1.3rem;
     font-weight: bold;
     white-space: nowrap;
     position: relative;
@@ -254,10 +254,10 @@
     text-align: left;
     font-style: italic;
     color: var(--text-secondary, #ddd);
-    line-height: 1rem;
-    font-size: 1.15rem;
+    line-height: 1.1rem;
+    font-size: 1.3rem;
     margin: 0;
-    margin-top: 3px;
+    margin-top: 0.5rem;
     padding: 0;
     word-wrap: break-word;
     overflow-wrap: break-word;
@@ -282,15 +282,15 @@
     }
 
     .name-label {
-      font-size: 0.9rem;
+      font-size: 1rem;
     }
 
     .suspicion-label {
-      font-size: 0.9rem;
+      font-size: 1rem;
     }
 
     .statement {
-      font-size: 0.9rem;
+      font-size: 1rem;
     }
   }
 </style>
