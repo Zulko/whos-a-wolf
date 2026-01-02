@@ -17,21 +17,23 @@
   const shortName = $derived(villager ? villager.shortName : villagerName);
 
   function getImagePath() {
+    const baseUrl = import.meta.env.MODE === "production" ? "/whos-a-wolf" : "";
+    const basePath = `${baseUrl}/images/characters`;
     if (isSolved) {
       if (suspicion === "werewolf") {
-        return `/images/characters/${shortName}_werewolf.jpg`;
+        return `${basePath}/${shortName}_werewolf.jpg`;
       } else if (suspicion === "shill") {
-        return `/images/characters/${shortName}_shill.jpg`;
+        return `${basePath}/${shortName}_shill.jpg`;
       } else {
-        return `/images/characters/${shortName}_happy.jpg`;
+        return `${basePath}/${shortName}_happy.jpg`;
       }
     } else {
       if (suspicion === "truthful") {
-        return `/images/characters/${shortName}_neutral.jpg`;
+        return `${basePath}/${shortName}_neutral.jpg`;
       } else if (suspicion === "shill") {
-        return `/images/characters/${shortName}_angry.jpg`;
+        return `${basePath}/${shortName}_angry.jpg`;
       } else {
-        return `/images/characters/${shortName}_furious.jpg`;
+        return `${basePath}/${shortName}_furious.jpg`;
       }
     }
   }
