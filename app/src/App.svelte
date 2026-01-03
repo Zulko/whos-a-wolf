@@ -235,6 +235,7 @@
     grid-template-columns: 1fr;
     gap: 1rem;
     margin-bottom: 2rem;
+    justify-items: center;
   }
 
   @media (min-width: 900px) {
