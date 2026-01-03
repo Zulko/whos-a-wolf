@@ -27,15 +27,15 @@
 
     // Check: at least one werewolf
     if (werewolfCount === 0) {
-      return "We know that at least one of these villagers is a werewolf. Click on the characters to change your suspicions.";
+      return "We know that at least one of villager is a werewolf. Click on the characters to change your suspicions.";
     }
 
     // Check: exactly one shill
     if (shillCount === 0) {
-      return "We know that one villager is a shill";
+      return "We know that one villager must be a shill.";
     }
     if (shillCount > 1) {
-      return "We know that exactly one villager is a shill";
+      return "We know that exactly one villager must bea shill.";
     }
 
     // Check statement consistency
@@ -168,10 +168,10 @@
   <h1>Who's a Wolf ?</h1>
 
   <p class="intro">
-    You have been sent to collect statements from the last villagers remaining
-    in Howlmore Town after a series of werewolf attacks. One or more of them are
-    lying because they are secretly werewolves. And one villager, you were told,
-    is lying because they are a shill on the werewolves' payroll.
+    You’ve been sent to gather statements from the last villagers of Howlmore
+    Town after a string of werewolf attacks. One or more are lying because they
+    are secretly werewolves. One other villager, you learned, is lying as a
+    shill paid by the werewolves.
     <br /><br />
     Can you find who's a werewolf, who's an honest villager, and who is the lying
     shill?
@@ -295,7 +295,7 @@
     background-color: #45a049;
   }
 
-  @media (max-width: 600px) {
+  @media (max-width: 500px) {
     main {
       width: 95%;
       padding: 1rem;

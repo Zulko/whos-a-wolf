@@ -140,7 +140,9 @@ class IfAThenB extends RelationshipStatement {
   }
 
   toEnglish(names) {
-    return `If ${names[this.aIndex]} is a werewolf, then so is ${
+    return `${names[this.bIndex]} has always been under ${
+      names[this.aIndex]
+    }'s spell. If ${names[this.aIndex]} is a werewolf, then so is ${
       names[this.bIndex]
     }.`;
   }
@@ -208,7 +210,9 @@ class IfNotAThenB extends RelationshipStatement {
   }
 
   toEnglish(names) {
-    return `If ${names[this.aIndex]} is not a wolf, then ${
+    return `I have seen ${names[this.bIndex]} creeping on ${
+      names[this.aIndex]
+    } once. If ${names[this.aIndex]} is not a wolf, then ${
       names[this.bIndex]
     } is a wolf.`;
   }
@@ -260,7 +264,7 @@ class ExactlyKWerewolves extends CountStatement {
     }
     const plural = this.count !== 1 ? "ves" : "f";
     const verb = this.count !== 1 ? "are" : "is";
-    return `I counted the paw prints: there ${verb} exactly ${this.count} werewol${plural} among my neighbors.`;
+    return `I counted the pawprints! There ${verb} exactly ${this.count} werewol${plural} among my neighbors.`;
   }
 }
 
@@ -342,7 +346,7 @@ class EvenNumberOfWerewolves extends CountStatement {
     } else {
       scopeDesc = `${scopeNames.length} villagers`;
     }
-    return `I looked at the footprints, and I know there is an even number of werewolves among my neighbors.`;
+    return `The pawprints show these beasts go by pair. There's an even number of wolves among my neighbors.`;
   }
 }
 
