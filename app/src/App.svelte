@@ -352,11 +352,10 @@
   }
 
   .theme-switcher {
-    position: fixed;
-    bottom: 1rem;
-    right: 1rem;
     display: flex;
+    justify-content: center;
     gap: 0.25rem;
+    padding: 2rem 0;
     opacity: 0.4;
     transition: opacity 0.2s ease;
   }
