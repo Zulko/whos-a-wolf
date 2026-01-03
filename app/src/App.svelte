@@ -223,7 +223,7 @@
 
   .intro {
     text-align: left;
-    max-width: 700px;
+    max-width: 760px;
     margin: 0 auto 2rem auto;
     line-height: 1.2rem;
     color: var(--text-secondary);
