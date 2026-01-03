@@ -14,6 +14,7 @@
   let statements = $state(new Map());
   let suspicions = $state(new Map());
   let showNewGameModal = $state(false);
+  let theme = $state("system"); // "light" | "dark" | "system"
 
   const characters = $derived(getDefaultCharacters(numVillagers));
 
@@ -94,7 +95,20 @@
     showNewGameModal = true;
   }
 
+  function setTheme(newTheme) {
+    theme = newTheme;
+    localStorage.setItem("theme", newTheme);
+    if (newTheme === "system") {
+      document.documentElement.removeAttribute("data-theme");
+    } else {
+      document.documentElement.setAttribute("data-theme", newTheme);
+    }
+  }
+
   onMount(() => {
+    // Load saved theme preference
+    const savedTheme = localStorage.getItem("theme") || "system";
+    setTheme(savedTheme);
     // Puzzles are already loaded and bundled in the app
     // Initialize from URL or select random puzzle
     let puzzleStr = getPuzzleFromURL();
@@ -199,10 +213,31 @@
     </div>
   {/if}
 
-  <button class="new-game-button" on:click={openNewGameModal}>New game</button>
+  <button class="new-game-button" onclick={openNewGameModal}>New game</button>
 </main>
 
 <NewGameModal bind:open={showNewGameModal} onNewGame={handleNewGame} />
+
+<footer class="theme-switcher">
+  <button
+    class="theme-btn"
+    class:active={theme === "light"}
+    onclick={() => setTheme("light")}
+    title="Light mode">☀</button
+  >
+  <button
+    class="theme-btn"
+    class:active={theme === "system"}
+    onclick={() => setTheme("system")}
+    title="System default">⚙</button
+  >
+  <button
+    class="theme-btn"
+    class:active={theme === "dark"}
+    onclick={() => setTheme("dark")}
+    title="Dark mode">☾</button
+  >
+</footer>
 
 <style>
   main {
@@ -314,5 +349,45 @@
     .error-message {
       font-size: 1rem;
     }
+  }
+
+  .theme-switcher {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    display: flex;
+    gap: 0.25rem;
+    opacity: 0.4;
+    transition: opacity 0.2s ease;
+  }
+
+  .theme-switcher:hover {
+    opacity: 1;
+  }
+
+  .theme-btn {
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    font-size: 1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 4px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+  }
+
+  .theme-btn:hover {
+    background: var(--card-border);
+  }
+
+  .theme-btn.active {
+    background: var(--text-secondary);
+    color: var(--bg-color);
+    border-color: var(--text-secondary);
   }
 </style>

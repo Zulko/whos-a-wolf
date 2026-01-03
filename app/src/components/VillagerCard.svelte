@@ -170,7 +170,7 @@
     height: 80px;
     border-radius: 0;
     overflow: hidden;
-    background-color: var(--card-border, #444);
+    background-color: white;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -180,8 +180,8 @@
   }
 
   .villager-picture img {
-    width: 100%;
-    height: 100%;
+    width: 90%;
+    height: 90%;
     object-fit: cover;
     display: block;
   }

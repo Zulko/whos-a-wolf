@@ -52,8 +52,9 @@ body {
   --success-text: #aaffaa;
 }
 
+/* System preference: light mode */
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not([data-theme="dark"]) {
     --bg-color: #f5f5f5;
     --text-color: #213547;
     --card-bg: rgba(255, 255, 255, 0.9);
@@ -67,9 +68,28 @@ body {
     --success-text: #006600;
   }
   
-  a:hover {
+  :root:not([data-theme="dark"]) a:hover {
     color: #747bff;
   }
+}
+
+/* Manual light theme override */
+:root[data-theme="light"] {
+  --bg-color: #f5f5f5;
+  --text-color: #213547;
+  --card-bg: rgba(255, 255, 255, 0.9);
+  --card-border: #ccc;
+  --text-secondary: #444;
+  --error-bg: rgba(255, 200, 200, 0.8);
+  --error-border: #cc0000;
+  --error-text: #880000;
+  --success-bg: rgba(200, 255, 200, 0.8);
+  --success-border: #00aa00;
+  --success-text: #006600;
+}
+
+:root[data-theme="light"] a:hover {
+  color: #747bff;
 }
 
 h1 {
