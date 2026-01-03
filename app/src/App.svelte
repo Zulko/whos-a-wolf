@@ -170,8 +170,8 @@
   <p class="intro">
     You’ve been sent to gather statements from the last villagers of Howlmore
     Town after a string of werewolf attacks. One or more are lying because they
-    are secretly werewolves. One other villager, you learned, is lying as a
-    shill paid by the werewolves.
+    are secretly werewolves. One other villager, you were told, is a shill paid
+    by the werewolves to lie.
     <br /><br />
     Can you find who's a werewolf, who's an honest villager, and who is the lying
     shill?
@@ -223,7 +223,7 @@
 
   .intro {
     text-align: left;
-    max-width: 800px;
+    max-width: 700px;
     margin: 0 auto 2rem auto;
     line-height: 1.2rem;
     color: var(--text-secondary);
