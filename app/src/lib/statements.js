@@ -180,7 +180,7 @@ class AtLeastOne extends RelationshipStatement {
   toEnglish(names) {
     return `At least one of ${names[this.aIndex]} and ${
       names[this.bIndex]
-    } is a wolf: they were with my Timmy just before he died.`;
+    } is a wolf: my Timmy was going to meet them the night he was eaten.`;
   }
 }
 
@@ -198,7 +198,7 @@ class ExactlyOne extends RelationshipStatement {
   toEnglish(names) {
     return `${names[this.aIndex]} and ${
       names[this.bIndex]
-    } never got along. I say, one is a wolf and the other isn't.`;
+    } hate each other so ferociously, it is clear one is a wolf and the other isn't.`;
   }
 }
 
@@ -334,18 +334,7 @@ class EvenNumberOfWerewolves extends CountStatement {
     return werewolfCount % 2 === 0;
   }
 
-  toEnglish(names) {
-    const scopeNames = this.scopeIndices.map((i) => names[i]);
-    let scopeDesc;
-    if (scopeNames.length === 1) {
-      scopeDesc = scopeNames[0];
-    } else if (scopeNames.length <= 3) {
-      scopeDesc =
-        scopeNames.slice(0, -1).join(", ") +
-        `, and ${scopeNames[scopeNames.length - 1]}`;
-    } else {
-      scopeDesc = `${scopeNames.length} villagers`;
-    }
+  toEnglish() {
     return `The pawprints show these beasts go by pair. There's an even number of wolves among my neighbors.`;
   }
 }
@@ -357,19 +346,8 @@ class OddNumberOfWerewolves extends CountStatement {
     return werewolfCount % 2 === 1;
   }
 
-  toEnglish(names) {
-    const scopeNames = this.scopeIndices.map((i) => names[i]);
-    let scopeDesc;
-    if (scopeNames.length === 1) {
-      scopeDesc = scopeNames[0];
-    } else if (scopeNames.length <= 3) {
-      scopeDesc =
-        scopeNames.slice(0, -1).join(", ") +
-        `, and ${scopeNames[scopeNames.length - 1]}`;
-    } else {
-      scopeDesc = `${scopeNames.length} villagers`;
-    }
-    return `Wolves go by pair but I've seen a lone wolf, so there is an odd number of werevolves amongst by neighbors.`;
+  toEnglish() {
+    return `Wolves hunt by pair but I saw a lone one! There's an odd number of wolves among my neighbors.`;
   }
 }
 

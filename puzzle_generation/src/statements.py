@@ -421,7 +421,12 @@ class ExactlyOne(RelationshipStatement):
 
 
 class IfNotAThenB(RelationshipStatement):
-    """Semantics: (NOT W[a]) => W[b]"""
+    """Semantics: (NOT W[a]) => W[b]
+
+    WARNING: This statement is logically equivalent to AtLeastOne(a, b),
+    since (NOT W[a]) => W[b] ≡ W[a] OR W[b].
+    Prefer using AtLeastOne for puzzle generation to avoid duplicates.
+    """
 
     @property
     def statement_id(self) -> str:

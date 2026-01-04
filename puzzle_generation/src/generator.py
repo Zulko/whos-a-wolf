@@ -18,7 +18,6 @@ from .statements import (
     ExactlyOne,
     EvenNumberOfWerewolves,
     IfAThenB,
-    IfNotAThenB,
     Neither,
     OddNumberOfWerewolves,
 )
@@ -247,9 +246,10 @@ def build_statement_library(config: GenerationConfig) -> list["Statement"]:
     ]
 
     # Non-symmetrical relationships: create for all ordered pairs
+    # Note: IfNotAThenB is excluded because it's logically equivalent to AtLeastOne
+    # ((NOT W[a]) => W[b] ≡ W[a] OR W[b])
     non_symmetrical_classes = [
         IfAThenB,
-        IfNotAThenB,
     ]
 
     # Create symmetrical relationship statements (only a <= b to avoid duplicates)
