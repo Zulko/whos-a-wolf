@@ -143,6 +143,10 @@ class GenerationConfig:
     has_shill: bool = False
     diverse_statements: bool = False
 
+    # Randomness: 0.0 = always pick best bundle, 1.0 = pick any valid bundle
+    # Controls the threshold for candidate selection (picks from bundles with >= (1-randomness) * best_eliminations)
+    randomness: float = 0.7
+
     def to_dict(self) -> dict:
         """Convert configuration to dictionary.
 

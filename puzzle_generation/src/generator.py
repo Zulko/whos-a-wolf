@@ -570,13 +570,18 @@ def greedy_assign_statements_until_unique(
 
     # Phase 1: Greedy assignment until uniqueness is achieved
     while unassigned_speakers and remaining_mask != (1 << W_star_index):
-        best_speaker = None
-        best_bundle = None
-        best_new_mask = None
+        # Shuffle speaker order each iteration for randomness
+        shuffled_speakers = unassigned_speakers.copy()
+        random.shuffle(shuffled_speakers)
+
+        # Collect top candidates instead of just the best one
+        top_candidates: list[
+            tuple[int, list["Statement"], int, int]
+        ] = []  # (speaker, bundle, new_mask, eliminations)
         best_eliminations = -1
 
         # Try each unassigned speaker
-        for speaker_idx in unassigned_speakers:
+        for speaker_idx in shuffled_speakers:
             candidate_bundles = candidate_bundles_by_speaker[speaker_idx]
 
             # Sample a subset if too many
@@ -584,6 +589,10 @@ def greedy_assign_statements_until_unique(
                 candidate_bundles = random.sample(
                     candidate_bundles, config.greedy_candidate_pool_size
                 )
+
+            # Shuffle candidate bundles for this speaker
+            candidate_bundles = list(candidate_bundles)
+            random.shuffle(candidate_bundles)
 
             # Try each candidate bundle
             for bundle in candidate_bundles:
@@ -622,20 +631,34 @@ def greedy_assign_statements_until_unique(
                 # Count how many assignments this eliminates
                 eliminations = bin(remaining_mask).count("1") - bin(new_mask).count("1")
 
+                # Track best eliminations for threshold calculation
                 if eliminations > best_eliminations:
-                    best_speaker = speaker_idx
-                    best_bundle = bundle
-                    best_new_mask = new_mask
                     best_eliminations = eliminations
 
+                # Add to candidates pool
+                top_candidates.append((speaker_idx, bundle, new_mask, eliminations))
+
         # If no bundle found that keeps W_star, fail
-        if best_speaker is None:
+        if not top_candidates:
             return None
 
-        # Assign the best bundle
+        # Select from top candidates based on randomness parameter
+        # randomness=0.0 means always pick best, randomness=1.0 means pick any valid bundle
+        threshold_pct = 1.0 - config.randomness
+        threshold = max(1, int(best_eliminations * threshold_pct))
+        good_candidates = [c for c in top_candidates if c[3] >= threshold]
+        if not good_candidates:
+            good_candidates = top_candidates  # Fallback to all candidates
+
+        # Randomly select from good candidates
+        chosen = random.choice(good_candidates)
+        best_speaker, best_bundle, best_new_mask, _ = chosen
+
+        # Assign the chosen bundle
         assigned_bundles[best_speaker] = best_bundle
         remaining_mask = best_new_mask
         unassigned_speakers.remove(best_speaker)
+
         # Mark statement types as claimed for diversity enforcement
         if config.diverse_statements:
             claimed_statement_types.update(get_statement_types(best_bundle))
@@ -647,11 +670,17 @@ def greedy_assign_statements_until_unique(
     # Phase 2: Assign bundles to remaining speakers while maintaining uniqueness
     # Once uniqueness is achieved, any bundle consistent with W_star will maintain it
     while unassigned_speakers:
-        best_speaker = None
-        best_bundle = None
+        # Shuffle speaker order for randomness
+        shuffled_speakers = unassigned_speakers.copy()
+        random.shuffle(shuffled_speakers)
+
+        # Collect all valid candidates for this phase
+        valid_candidates: list[
+            tuple[int, list["Statement"], int]
+        ] = []  # (speaker, bundle, new_mask)
 
         # Try each unassigned speaker
-        for speaker_idx in unassigned_speakers:
+        for speaker_idx in shuffled_speakers:
             candidate_bundles = candidate_bundles_by_speaker[speaker_idx]
 
             # Sample a subset if too many
@@ -659,6 +688,10 @@ def greedy_assign_statements_until_unique(
                 candidate_bundles = random.sample(
                     candidate_bundles, config.greedy_candidate_pool_size
                 )
+
+            # Shuffle candidate bundles
+            candidate_bundles = list(candidate_bundles)
+            random.shuffle(candidate_bundles)
 
             # Try each candidate bundle
             for bundle in candidate_bundles:
@@ -693,22 +726,22 @@ def greedy_assign_statements_until_unique(
                 # Check if W_star is still possible (this maintains uniqueness since
                 # remaining_mask already only contains W_star_index)
                 if new_mask & (1 << W_star_index):
-                    # This bundle is consistent with W_star, use it
-                    best_speaker = speaker_idx
-                    best_bundle = bundle
-                    remaining_mask = new_mask
-                    break  # Found a valid bundle for this speaker
-
-            if best_speaker is not None:
-                break  # Found a bundle, assign it
+                    # This bundle is consistent with W_star, add to candidates
+                    valid_candidates.append((speaker_idx, bundle, new_mask))
 
         # If no bundle found that keeps W_star, fail
-        if best_speaker is None:
+        if not valid_candidates:
             return None
+
+        # Randomly select from valid candidates
+        chosen = random.choice(valid_candidates)
+        best_speaker, best_bundle, best_new_mask = chosen
 
         # Assign the bundle
         assigned_bundles[best_speaker] = best_bundle
+        remaining_mask = best_new_mask
         unassigned_speakers.remove(best_speaker)
+
         # Mark statement types as claimed for diversity enforcement
         if config.diverse_statements:
             claimed_statement_types.update(get_statement_types(best_bundle))

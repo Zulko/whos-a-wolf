@@ -86,6 +86,12 @@ def main() -> None:
         action="store_true",
         help="Require each character to use at least one statement type that no other character uses",
     )
+    parser.add_argument(
+        "--randomness",
+        type=float,
+        default=0.7,
+        help="Randomness level 0.0-1.0: 0=always pick best bundle, 1=pick any valid bundle (default: 0.7)",
+    )
 
     args = parser.parse_args()
 
@@ -106,6 +112,7 @@ def main() -> None:
         min_werewolves=args.min_werewolves,
         max_werewolves=max_werewolves,
         diverse_statements=args.diverse_statements,
+        randomness=args.randomness,
     )
 
     # Load or build truth cache
