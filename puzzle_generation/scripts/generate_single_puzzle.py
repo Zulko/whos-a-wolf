@@ -92,6 +92,11 @@ def main() -> None:
         default=0.7,
         help="Randomness level 0.0-1.0: 0=always pick best bundle, 1=pick any valid bundle (default: 0.7)",
     )
+    parser.add_argument(
+        "--coherent-statements",
+        action="store_true",
+        help="Ensure truthful speakers' statements don't have conflicting accusations/vouchings",
+    )
 
     args = parser.parse_args()
 
@@ -113,6 +118,7 @@ def main() -> None:
         max_werewolves=max_werewolves,
         diverse_statements=args.diverse_statements,
         randomness=args.randomness,
+        coherent_statements=args.coherent_statements,
     )
 
     # Load or build truth cache

@@ -147,6 +147,11 @@ class GenerationConfig:
     # Controls the threshold for candidate selection (picks from bundles with >= (1-randomness) * best_eliminations)
     randomness: float = 0.7
 
+    # Coherent statements: if True, statements from truthful speakers cannot
+    # have conflicting accusations/vouchings (e.g., if A vouches for B, another
+    # truthful speaker cannot accuse B of the same relationship with A)
+    coherent_statements: bool = False
+
     def to_dict(self) -> dict:
         """Convert configuration to dictionary.
 

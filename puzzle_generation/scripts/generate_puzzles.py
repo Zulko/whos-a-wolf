@@ -71,6 +71,11 @@ def main() -> None:
         default=1,
         help="Number of CPUs to use for parallel generation (default: 1)",
     )
+    parser.add_argument(
+        "--coherent-statements",
+        action="store_true",
+        help="Ensure truthful speakers' statements don't have conflicting accusations/vouchings",
+    )
 
     args = parser.parse_args()
 
@@ -94,6 +99,7 @@ def main() -> None:
         min_werewolves=1,
         max_werewolves=N - 1,
         diverse_statements=True,
+        coherent_statements=args.coherent_statements,
     )
 
     # Load or build truth cache

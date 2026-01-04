@@ -3,6 +3,8 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
+import z3
+
 if TYPE_CHECKING:
     from z3 import BoolRef
 
@@ -80,6 +82,30 @@ class Statement(ABC):
 
         Returns:
             Short string like "I-5-7" for IfAThenB(5,7) or "N-3-4" for Neither(3,4)
+        """
+        pass
+
+    @abstractmethod
+    def get_accusations(self) -> set[tuple[int, int]]:
+        """Return set of (accuser, accused) tuples implied by this statement.
+
+        An accusation (a, b) means the statement implies a negative relationship
+        where a's innocence implies b's guilt, or where a and b are in opposition.
+
+        Returns:
+            Set of (a, b) tuples representing accusations
+        """
+        pass
+
+    @abstractmethod
+    def get_vouchings(self) -> set[tuple[int, int]]:
+        """Return set of (voucher, vouched_for) tuples implied by this statement.
+
+        A vouching (a, b) means the statement implies a positive relationship
+        where a and b share the same fate (both innocent or both guilty).
+
+        Returns:
+            Set of (a, b) tuples representing vouchings
         """
         pass
 
@@ -308,8 +334,6 @@ class IfAThenB(RelationshipStatement):
         return not assignment[self.a_index] or assignment[self.b_index]
 
     def to_solver_expr(self, W_vars: list) -> "BoolRef":
-        import z3
-
         # W[a] => W[b]
         return z3.Implies(W_vars[self.a_index], W_vars[self.b_index])
 
@@ -322,6 +346,14 @@ class IfAThenB(RelationshipStatement):
     def to_short_string(self) -> str:
         """Return short string representation: I-a-b"""
         return f"I-{self.a_index}-{self.b_index}"
+
+    def get_accusations(self) -> set[tuple[int, int]]:
+        """a's guilt implies b's guilt - accusation from a to b."""
+        return {(self.a_index, self.b_index)}
+
+    def get_vouchings(self) -> set[tuple[int, int]]:
+        """Contrapositive: b's innocence implies a's innocence - b vouches for a."""
+        return {(self.b_index, self.a_index)}
 
 
 class BothOrNeither(RelationshipStatement):
@@ -340,8 +372,6 @@ class BothOrNeither(RelationshipStatement):
         return assignment[self.a_index] == assignment[self.b_index]
 
     def to_solver_expr(self, W_vars: list) -> "BoolRef":
-        import z3
-
         # W[a] == W[b]
         return W_vars[self.a_index] == W_vars[self.b_index]
 
@@ -354,6 +384,14 @@ class BothOrNeither(RelationshipStatement):
     def to_short_string(self) -> str:
         """Return short string representation: B-a-b"""
         return f"B-{self.a_index}-{self.b_index}"
+
+    def get_accusations(self) -> set[tuple[int, int]]:
+        """No accusations - this is a mutual vouching relationship."""
+        return set()
+
+    def get_vouchings(self) -> set[tuple[int, int]]:
+        """Mutual vouching - they share the same fate."""
+        return {(self.a_index, self.b_index), (self.b_index, self.a_index)}
 
 
 class AtLeastOne(RelationshipStatement):
@@ -372,8 +410,6 @@ class AtLeastOne(RelationshipStatement):
         return assignment[self.a_index] or assignment[self.b_index]
 
     def to_solver_expr(self, W_vars: list) -> "BoolRef":
-        import z3
-
         # W[a] OR W[b]
         return z3.Or(W_vars[self.a_index], W_vars[self.b_index])
 
@@ -386,6 +422,14 @@ class AtLeastOne(RelationshipStatement):
     def to_short_string(self) -> str:
         """Return short string representation: A-a-b"""
         return f"A-{self.a_index}-{self.b_index}"
+
+    def get_accusations(self) -> set[tuple[int, int]]:
+        """Mutual accusation - if one is innocent, the other must be guilty."""
+        return {(self.a_index, self.b_index), (self.b_index, self.a_index)}
+
+    def get_vouchings(self) -> set[tuple[int, int]]:
+        """No vouchings - this is an accusatory statement."""
+        return set()
 
 
 class ExactlyOne(RelationshipStatement):
@@ -404,8 +448,6 @@ class ExactlyOne(RelationshipStatement):
         return assignment[self.a_index] != assignment[self.b_index]
 
     def to_solver_expr(self, W_vars: list) -> "BoolRef":
-        import z3
-
         # W[a] != W[b]
         return W_vars[self.a_index] != W_vars[self.b_index]
 
@@ -418,6 +460,14 @@ class ExactlyOne(RelationshipStatement):
     def to_short_string(self) -> str:
         """Return short string representation: X-a-b"""
         return f"X-{self.a_index}-{self.b_index}"
+
+    def get_accusations(self) -> set[tuple[int, int]]:
+        """Mutual accusation - one must be guilty, they're in opposition."""
+        return {(self.a_index, self.b_index), (self.b_index, self.a_index)}
+
+    def get_vouchings(self) -> set[tuple[int, int]]:
+        """No vouchings - they cannot both be innocent or both be guilty."""
+        return set()
 
 
 class IfNotAThenB(RelationshipStatement):
@@ -437,8 +487,6 @@ class IfNotAThenB(RelationshipStatement):
         return assignment[self.a_index] or assignment[self.b_index]
 
     def to_solver_expr(self, W_vars: list) -> "BoolRef":
-        import z3
-
         # (NOT W[a]) => W[b]
         return z3.Implies(z3.Not(W_vars[self.a_index]), W_vars[self.b_index])
 
@@ -451,6 +499,14 @@ class IfNotAThenB(RelationshipStatement):
     def to_short_string(self) -> str:
         """Return short string representation: F-a-b"""
         return f"F-{self.a_index}-{self.b_index}"
+
+    def get_accusations(self) -> set[tuple[int, int]]:
+        """Mutual accusation - equivalent to AtLeastOne, at least one must be guilty."""
+        return {(self.a_index, self.b_index), (self.b_index, self.a_index)}
+
+    def get_vouchings(self) -> set[tuple[int, int]]:
+        """No vouchings - this is an accusatory statement."""
+        return set()
 
 
 class Neither(RelationshipStatement):
@@ -469,8 +525,6 @@ class Neither(RelationshipStatement):
         return not assignment[self.a_index] and not assignment[self.b_index]
 
     def to_solver_expr(self, W_vars: list) -> "BoolRef":
-        import z3
-
         # (NOT W[a]) AND (NOT W[b])
         return z3.And(z3.Not(W_vars[self.a_index]), z3.Not(W_vars[self.b_index]))
 
@@ -483,6 +537,14 @@ class Neither(RelationshipStatement):
     def to_short_string(self) -> str:
         """Return short string representation: N-a-b"""
         return f"N-{self.a_index}-{self.b_index}"
+
+    def get_accusations(self) -> set[tuple[int, int]]:
+        """No accusations - both are asserted innocent."""
+        return set()
+
+    def get_vouchings(self) -> set[tuple[int, int]]:
+        """Mutual vouching - both are asserted innocent, they share innocence."""
+        return {(self.a_index, self.b_index), (self.b_index, self.a_index)}
 
 
 # Count Statement Subclasses
@@ -511,8 +573,6 @@ class ExactlyKWerewolves(CountStatement):
         return werewolf_count == self.count
 
     def to_solver_expr(self, W_vars: list) -> "BoolRef":
-        import z3
-
         # SUM(W[i] for i in scope) == count
         total = sum(z3.If(W_vars[i], 1, 0) for i in self.scope_indices)
         return total == self.count
@@ -548,6 +608,14 @@ class ExactlyKWerewolves(CountStatement):
             "count": self.count,
         }
 
+    def get_accusations(self) -> set[tuple[int, int]]:
+        """No direct inter-person accusations for count statements."""
+        return set()
+
+    def get_vouchings(self) -> set[tuple[int, int]]:
+        """No direct inter-person vouchings for count statements."""
+        return set()
+
 
 class AtMostKWerewolves(CountStatement):
     """Semantics: SUM(W[i] for i in scope) <= count"""
@@ -572,8 +640,6 @@ class AtMostKWerewolves(CountStatement):
         return werewolf_count <= self.count
 
     def to_solver_expr(self, W_vars: list) -> "BoolRef":
-        import z3
-
         # SUM(W[i] for i in scope) <= count
         total = sum(z3.If(W_vars[i], 1, 0) for i in self.scope_indices)
         return total <= self.count
@@ -608,6 +674,14 @@ class AtMostKWerewolves(CountStatement):
             "count": self.count,
         }
 
+    def get_accusations(self) -> set[tuple[int, int]]:
+        """No direct inter-person accusations for count statements."""
+        return set()
+
+    def get_vouchings(self) -> set[tuple[int, int]]:
+        """No direct inter-person vouchings for count statements."""
+        return set()
+
 
 class AtLeastKWerewolves(CountStatement):
     """Semantics: SUM(W[i] for i in scope) >= count"""
@@ -632,8 +706,6 @@ class AtLeastKWerewolves(CountStatement):
         return werewolf_count >= self.count
 
     def to_solver_expr(self, W_vars: list) -> "BoolRef":
-        import z3
-
         # SUM(W[i] for i in scope) >= count
         total = sum(z3.If(W_vars[i], 1, 0) for i in self.scope_indices)
         return total >= self.count
@@ -668,6 +740,14 @@ class AtLeastKWerewolves(CountStatement):
             "count": self.count,
         }
 
+    def get_accusations(self) -> set[tuple[int, int]]:
+        """No direct inter-person accusations for count statements."""
+        return set()
+
+    def get_vouchings(self) -> set[tuple[int, int]]:
+        """No direct inter-person vouchings for count statements."""
+        return set()
+
 
 class EvenNumberOfWerewolves(CountStatement):
     """Semantics: SUM(W[i] for i in scope) % 2 == 0"""
@@ -682,8 +762,6 @@ class EvenNumberOfWerewolves(CountStatement):
         return werewolf_count % 2 == 0
 
     def to_solver_expr(self, W_vars: list) -> "BoolRef":
-        import z3
-
         # SUM(W[i] for i in scope) % 2 == 0
         total = sum(z3.If(W_vars[i], 1, 0) for i in self.scope_indices)
         return total % 2 == 0
@@ -706,6 +784,14 @@ class EvenNumberOfWerewolves(CountStatement):
         scope_str = ".".join(map(str, sorted(self.scope_indices)))
         return f"V-{scope_str}"
 
+    def get_accusations(self) -> set[tuple[int, int]]:
+        """No direct inter-person accusations for count statements."""
+        return set()
+
+    def get_vouchings(self) -> set[tuple[int, int]]:
+        """No direct inter-person vouchings for count statements."""
+        return set()
+
 
 class OddNumberOfWerewolves(CountStatement):
     """Semantics: SUM(W[i] for i in scope) % 2 == 1"""
@@ -720,8 +806,6 @@ class OddNumberOfWerewolves(CountStatement):
         return werewolf_count % 2 == 1
 
     def to_solver_expr(self, W_vars: list) -> "BoolRef":
-        import z3
-
         # SUM(W[i] for i in scope) % 2 == 1
         total = sum(z3.If(W_vars[i], 1, 0) for i in self.scope_indices)
         return total % 2 == 1
@@ -743,3 +827,11 @@ class OddNumberOfWerewolves(CountStatement):
         """Return short string representation: O-scope (scope uses dots, e.g., O-0.1)"""
         scope_str = ".".join(map(str, sorted(self.scope_indices)))
         return f"O-{scope_str}"
+
+    def get_accusations(self) -> set[tuple[int, int]]:
+        """No direct inter-person accusations for count statements."""
+        return set()
+
+    def get_vouchings(self) -> set[tuple[int, int]]:
+        """No direct inter-person vouchings for count statements."""
+        return set()

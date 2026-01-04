@@ -32,6 +32,58 @@ from .truth_cache import (
 from .utils import get_default_names
 
 
+def is_bundle_coherent_with_existing(
+    bundle: list["Statement"],
+    existing_accusations: set[tuple[int, int]],
+    existing_vouchings: set[tuple[int, int]],
+) -> bool:
+    """Check if a bundle's accusations/vouchings are coherent with existing ones.
+
+    A bundle is coherent if:
+    - None of its vouchings conflict with existing accusations
+    - None of its accusations conflict with existing vouchings
+
+    Args:
+        bundle: List of statements in the bundle to check
+        existing_accusations: Set of (accuser, accused) tuples from previous bundles
+        existing_vouchings: Set of (voucher, vouched_for) tuples from previous bundles
+
+    Returns:
+        True if bundle is coherent with existing statements, False otherwise
+    """
+    for stmt in bundle:
+        # Check if new vouchings conflict with existing accusations
+        new_vouchings = stmt.get_vouchings()
+        if new_vouchings & existing_accusations:
+            return False
+
+        # Check if new accusations conflict with existing vouchings
+        new_accusations = stmt.get_accusations()
+        if new_accusations & existing_vouchings:
+            return False
+
+    return True
+
+
+def collect_accusations_vouchings_from_bundle(
+    bundle: list["Statement"],
+) -> tuple[set[tuple[int, int]], set[tuple[int, int]]]:
+    """Collect all accusations and vouchings from a bundle.
+
+    Args:
+        bundle: List of statements
+
+    Returns:
+        Tuple of (accusations, vouchings) sets
+    """
+    accusations: set[tuple[int, int]] = set()
+    vouchings: set[tuple[int, int]] = set()
+    for stmt in bundle:
+        accusations.update(stmt.get_accusations())
+        vouchings.update(stmt.get_vouchings())
+    return accusations, vouchings
+
+
 def statement_contains_other(
     statement_a: "Statement",
     statement_b: "Statement",
@@ -568,6 +620,10 @@ def greedy_assign_statements_until_unique(
     # Track claimed statement types for diversity enforcement
     claimed_statement_types: set[str] = set()
 
+    # Track accusations and vouchings for coherence filtering (truthful speakers only)
+    existing_accusations: set[tuple[int, int]] = set()
+    existing_vouchings: set[tuple[int, int]] = set()
+
     # Phase 1: Greedy assignment until uniqueness is achieved
     while unassigned_speakers and remaining_mask != (1 << W_star_index):
         # Shuffle speaker order each iteration for randomness
@@ -606,6 +662,17 @@ def greedy_assign_statements_until_unique(
                     # Check if bundle has at least one unclaimed type
                     if not (bundle_types - claimed_statement_types):
                         continue  # All types in bundle are already claimed, skip it
+
+                # Enforce coherence: bundle must not conflict with existing accusations/vouchings
+                # Only applies to truthful speakers (non-werewolves, non-shills)
+                is_wolf = W_star[speaker_idx]
+                is_shill = M_star[speaker_idx]
+                is_truthful = not is_wolf and not is_shill
+                if config.coherent_statements and is_truthful:
+                    if not is_bundle_coherent_with_existing(
+                        bundle, existing_accusations, existing_vouchings
+                    ):
+                        continue  # Bundle conflicts with existing statements
 
                 shill_mask = (
                     shill_mask_by_speaker[speaker_idx]
@@ -663,6 +730,17 @@ def greedy_assign_statements_until_unique(
         if config.diverse_statements:
             claimed_statement_types.update(get_statement_types(best_bundle))
 
+        # Track accusations and vouchings for coherence filtering (truthful speakers only)
+        is_wolf = W_star[best_speaker]
+        is_shill = M_star[best_speaker]
+        is_truthful = not is_wolf and not is_shill
+        if config.coherent_statements and is_truthful:
+            bundle_accusations, bundle_vouchings = (
+                collect_accusations_vouchings_from_bundle(best_bundle)
+            )
+            existing_accusations.update(bundle_accusations)
+            existing_vouchings.update(bundle_vouchings)
+
     # Check if we achieved uniqueness (only W_star_index bit set)
     if remaining_mask != (1 << W_star_index):
         return None  # Not unique yet
@@ -706,6 +784,17 @@ def greedy_assign_statements_until_unique(
                     if not (bundle_types - claimed_statement_types):
                         continue  # All types in bundle are already claimed, skip it
 
+                # Enforce coherence: bundle must not conflict with existing accusations/vouchings
+                # Only applies to truthful speakers (non-werewolves, non-shills)
+                is_wolf = W_star[speaker_idx]
+                is_shill = M_star[speaker_idx]
+                is_truthful = not is_wolf and not is_shill
+                if config.coherent_statements and is_truthful:
+                    if not is_bundle_coherent_with_existing(
+                        bundle, existing_accusations, existing_vouchings
+                    ):
+                        continue  # Bundle conflicts with existing statements
+
                 shill_mask = (
                     shill_mask_by_speaker[speaker_idx]
                     if shill_mask_by_speaker is not None
@@ -745,6 +834,17 @@ def greedy_assign_statements_until_unique(
         # Mark statement types as claimed for diversity enforcement
         if config.diverse_statements:
             claimed_statement_types.update(get_statement_types(best_bundle))
+
+        # Track accusations and vouchings for coherence filtering (truthful speakers only)
+        is_wolf = W_star[best_speaker]
+        is_shill = M_star[best_speaker]
+        is_truthful = not is_wolf and not is_shill
+        if config.coherent_statements and is_truthful:
+            bundle_accusations, bundle_vouchings = (
+                collect_accusations_vouchings_from_bundle(best_bundle)
+            )
+            existing_accusations.update(bundle_accusations)
+            existing_vouchings.update(bundle_vouchings)
 
     # Final check: ensure uniqueness is maintained
     if remaining_mask != (1 << W_star_index):
