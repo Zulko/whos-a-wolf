@@ -45,6 +45,12 @@ class Statement {
         throw new Error(`Invalid IfNotAThenB format: ${shortStr}`);
       }
       return new IfNotAThenB(parseInt(parts[1]), parseInt(parts[2]));
+    } else if (code === "T") {
+      // AtMostOne
+      if (parts.length !== 3) {
+        throw new Error(`Invalid AtMostOne format: ${shortStr}`);
+      }
+      return new AtMostOne(parseInt(parts[1]), parseInt(parts[2]));
     } else if (code === "N") {
       // Neither
       if (parts.length !== 3) {
@@ -52,45 +58,51 @@ class Statement {
       }
       return new Neither(parseInt(parts[1]), parseInt(parts[2]));
     }
-    // Count statements
+    // Count statements (all return CountWerewolves)
     else if (code === "E") {
-      // ExactlyKWerewolves: E-scope-count (scope uses dots)
+      // Exactly: E-scope-count (scope uses dots)
       if (parts.length !== 3) {
-        throw new Error(`Invalid ExactlyKWerewolves format: ${shortStr}`);
+        throw new Error(
+          `Invalid CountWerewolves (exactly) format: ${shortStr}`
+        );
       }
       const scope = parts[1].split(".").map((x) => parseInt(x));
       const count = parseInt(parts[2]);
-      return new ExactlyKWerewolves(scope, count);
+      return new CountWerewolves(scope, count, "exactly");
     } else if (code === "M") {
-      // AtMostKWerewolves: M-scope-count (scope uses dots)
+      // At most: M-scope-count (scope uses dots)
       if (parts.length !== 3) {
-        throw new Error(`Invalid AtMostKWerewolves format: ${shortStr}`);
+        throw new Error(
+          `Invalid CountWerewolves (at_most) format: ${shortStr}`
+        );
       }
       const scope = parts[1].split(".").map((x) => parseInt(x));
       const count = parseInt(parts[2]);
-      return new AtMostKWerewolves(scope, count);
+      return new CountWerewolves(scope, count, "at_most");
     } else if (code === "L") {
-      // AtLeastKWerewolves: L-scope-count (scope uses dots)
+      // At least: L-scope-count (scope uses dots)
       if (parts.length !== 3) {
-        throw new Error(`Invalid AtLeastKWerewolves format: ${shortStr}`);
+        throw new Error(
+          `Invalid CountWerewolves (at_least) format: ${shortStr}`
+        );
       }
       const scope = parts[1].split(".").map((x) => parseInt(x));
       const count = parseInt(parts[2]);
-      return new AtLeastKWerewolves(scope, count);
+      return new CountWerewolves(scope, count, "at_least");
     } else if (code === "V") {
-      // EvenNumberOfWerewolves: V-scope (scope uses dots)
+      // Even: V-scope (scope uses dots)
       if (parts.length !== 2) {
-        throw new Error(`Invalid EvenNumberOfWerewolves format: ${shortStr}`);
+        throw new Error(`Invalid CountWerewolves (even) format: ${shortStr}`);
       }
       const scope = parts[1].split(".").map((x) => parseInt(x));
-      return new EvenNumberOfWerewolves(scope);
+      return new CountWerewolves(scope, "even");
     } else if (code === "O") {
-      // OddNumberOfWerewolves: O-scope (scope uses dots)
+      // Odd: O-scope (scope uses dots)
       if (parts.length !== 2) {
-        throw new Error(`Invalid OddNumberOfWerewolves format: ${shortStr}`);
+        throw new Error(`Invalid CountWerewolves (odd) format: ${shortStr}`);
       }
       const scope = parts[1].split(".").map((x) => parseInt(x));
-      return new OddNumberOfWerewolves(scope);
+      return new CountWerewolves(scope, "odd");
     } else {
       throw new Error(`Unknown statement code: ${code}`);
     }
@@ -202,6 +214,25 @@ class ExactlyOne extends RelationshipStatement {
   }
 }
 
+class AtMostOne extends RelationshipStatement {
+  /** Semantics: NOT(W[a] AND W[b]) - at most one of them is a werewolf */
+  constructor(aIndex, bIndex) {
+    // Normalize: always store min(a, b) as a_index, max(a, b) as b_index
+    super(Math.min(aIndex, bIndex), Math.max(aIndex, bIndex));
+  }
+
+  evaluateOnAssignment(assignment) {
+    // NOT(W[a] AND W[b]) = NOT W[a] OR NOT W[b]
+    return !(assignment[this.aIndex] && assignment[this.bIndex]);
+  }
+
+  toEnglish(names) {
+    return `${names[this.aIndex]} and ${
+      names[this.bIndex]
+    } behave so differently, at most one of them is a wolf.`;
+  }
+}
+
 class IfNotAThenB extends RelationshipStatement {
   /** Semantics: (NOT W[a]) => W[b] */
   evaluateOnAssignment(assignment) {
@@ -238,117 +269,104 @@ class Neither extends RelationshipStatement {
 
 // Count Statement Subclasses
 
-class ExactlyKWerewolves extends CountStatement {
-  /** Semantics: SUM(W[i] for i in scope) == count */
-  constructor(scopeIndices, count) {
+class CountWerewolves extends CountStatement {
+  /**
+   * Unified count statement for werewolf constraints.
+   *
+   * Semantics depend on count and comparison:
+   * - count=int, comparison="exactly": SUM(W[i]) == count
+   * - count=int, comparison="at_most": SUM(W[i]) <= count
+   * - count=int, comparison="at_least": SUM(W[i]) >= count
+   * - count="even": SUM(W[i]) % 2 == 0
+   * - count="odd": SUM(W[i]) % 2 == 1
+   *
+   * @param {number[]} scopeIndices - Array of villager indices in the scope
+   * @param {number|string} count - Either an int for numeric counts, or "odd"/"even" for parity
+   * @param {string} comparison - For int counts: "exactly", "at_most", or "at_least"
+   */
+  constructor(scopeIndices, count, comparison = "exactly") {
     super(scopeIndices);
+    if (typeof count === "string" && count !== "odd" && count !== "even") {
+      throw new Error(`count must be int, 'odd', or 'even', got: ${count}`);
+    }
+    if (
+      typeof count === "number" &&
+      !["exactly", "at_most", "at_least"].includes(comparison)
+    ) {
+      throw new Error(
+        `comparison must be 'exactly', 'at_most', or 'at_least', got: ${comparison}`
+      );
+    }
     this.count = count;
+    this.comparison = typeof count === "number" ? comparison : null;
+  }
+
+  get _isParity() {
+    return typeof this.count === "string";
   }
 
   evaluateOnAssignment(assignment) {
     const werewolfCount = this.scopeIndices.filter((i) => assignment[i]).length;
-    return werewolfCount === this.count;
+    if (this._isParity) {
+      if (this.count === "even") {
+        return werewolfCount % 2 === 0;
+      } else {
+        // odd
+        return werewolfCount % 2 === 1;
+      }
+    } else {
+      if (this.comparison === "exactly") {
+        return werewolfCount === this.count;
+      } else if (this.comparison === "at_most") {
+        return werewolfCount <= this.count;
+      } else {
+        // at_least
+        return werewolfCount >= this.count;
+      }
+    }
   }
 
   toEnglish(names) {
-    const scopeNames = this.scopeIndices.map((i) => names[i]);
-    let scopeDesc;
-    if (scopeNames.length === 1) {
-      scopeDesc = scopeNames[0];
-    } else if (scopeNames.length <= 3) {
-      scopeDesc =
-        scopeNames.slice(0, -1).join(", ") +
-        `, and ${scopeNames[scopeNames.length - 1]}`;
+    if (this._isParity) {
+      if (this.count === "even") {
+        return `The pawprints show these beasts go by pair. There's an even number of wolves among my neighbors.`;
+      } else {
+        return `Wolves hunt by pair but I saw a lone one! There's an odd number of wolves among my neighbors.`;
+      }
     } else {
-      scopeDesc = `${scopeNames.length} villagers`;
+      const plural = this.count !== 1 ? "ves" : "f";
+      const verb = this.count !== 1 ? "are" : "is";
+      if (this.comparison === "exactly") {
+        return `I counted the pawprints! There ${verb} exactly ${this.count} werewol${plural} among my neighbors.`;
+      } else if (this.comparison === "at_most") {
+        return `I've counted them all, and there ${verb} at most ${this.count} werewol${plural}.`;
+      } else {
+        // at_least
+        return `I saw at least ${this.count} werewol${plural} in the dark last night.`;
+      }
     }
-    const plural = this.count !== 1 ? "ves" : "f";
-    const verb = this.count !== 1 ? "are" : "is";
-    return `I counted the pawprints! There ${verb} exactly ${this.count} werewol${plural} among my neighbors.`;
   }
 }
 
-class AtMostKWerewolves extends CountStatement {
-  /** Semantics: SUM(W[i] for i in scope) <= count */
-  constructor(scopeIndices, count) {
-    super(scopeIndices);
-    this.count = count;
-  }
-
-  evaluateOnAssignment(assignment) {
-    const werewolfCount = this.scopeIndices.filter((i) => assignment[i]).length;
-    return werewolfCount <= this.count;
-  }
-
-  toEnglish(names) {
-    const scopeNames = this.scopeIndices.map((i) => names[i]);
-    let scopeDesc;
-    if (scopeNames.length === 1) {
-      scopeDesc = scopeNames[0];
-    } else if (scopeNames.length <= 3) {
-      scopeDesc =
-        scopeNames.slice(0, -1).join(", ") +
-        `, and ${scopeNames[scopeNames.length - 1]}`;
-    } else {
-      scopeDesc = `${scopeNames.length} villagers`;
-    }
-    const plural = this.count !== 1 ? "ves" : "f";
-    const verb = this.count !== 1 ? "are" : "is";
-    return `I've counted them all, and there ${verb} at most ${this.count} werewol${plural}.`;
-  }
+// Backwards-compatible factory functions for old class names
+function ExactlyKWerewolves(scopeIndices, count) {
+  return new CountWerewolves(scopeIndices, count, "exactly");
 }
 
-class AtLeastKWerewolves extends CountStatement {
-  /** Semantics: SUM(W[i] for i in scope) >= count */
-  constructor(scopeIndices, count) {
-    super(scopeIndices);
-    this.count = count;
-  }
-
-  evaluateOnAssignment(assignment) {
-    const werewolfCount = this.scopeIndices.filter((i) => assignment[i]).length;
-    return werewolfCount >= this.count;
-  }
-
-  toEnglish(names) {
-    const scopeNames = this.scopeIndices.map((i) => names[i]);
-    let scopeDesc;
-    if (scopeNames.length === 1) {
-      scopeDesc = scopeNames[0];
-    } else if (scopeNames.length <= 3) {
-      scopeDesc =
-        scopeNames.slice(0, -1).join(", ") +
-        `, and ${scopeNames[scopeNames.length - 1]}`;
-    } else {
-      scopeDesc = `${scopeNames.length} villagers`;
-    }
-    const plural = this.count !== 1 ? "ves" : "f";
-    return `I saw at least ${this.count} werewol${plural} in the dark last night.`;
-  }
+function AtMostKWerewolves(scopeIndices, count) {
+  return new CountWerewolves(scopeIndices, count, "at_most");
 }
 
-class EvenNumberOfWerewolves extends CountStatement {
-  /** Semantics: SUM(W[i] for i in scope) % 2 == 0 */
-  evaluateOnAssignment(assignment) {
-    const werewolfCount = this.scopeIndices.filter((i) => assignment[i]).length;
-    return werewolfCount % 2 === 0;
-  }
-
-  toEnglish() {
-    return `The pawprints show these beasts go by pair. There's an even number of wolves among my neighbors.`;
-  }
+function AtLeastKWerewolves(scopeIndices, count) {
+  return new CountWerewolves(scopeIndices, count, "at_least");
 }
 
-class OddNumberOfWerewolves extends CountStatement {
-  /** Semantics: SUM(W[i] for i in scope) % 2 == 1 */
-  evaluateOnAssignment(assignment) {
-    const werewolfCount = this.scopeIndices.filter((i) => assignment[i]).length;
-    return werewolfCount % 2 === 1;
-  }
+function EvenNumberOfWerewolves(scopeIndices) {
+  return new CountWerewolves(scopeIndices, "even");
+}
 
-  toEnglish() {
-    return `Wolves hunt by pair but I saw a lone one! There's an odd number of wolves among my neighbors.`;
-  }
+function OddNumberOfWerewolves(scopeIndices) {
+  return new CountWerewolves(scopeIndices, "odd");
 }
 
 export {
@@ -357,8 +375,11 @@ export {
   BothOrNeither,
   AtLeastOne,
   ExactlyOne,
+  AtMostOne,
   IfNotAThenB,
   Neither,
+  CountWerewolves,
+  // Backwards-compatible aliases
   ExactlyKWerewolves,
   AtMostKWerewolves,
   AtLeastKWerewolves,

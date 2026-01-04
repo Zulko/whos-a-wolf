@@ -71,11 +71,6 @@ def main() -> None:
         default=1,
         help="Number of CPUs to use for parallel generation (default: 1)",
     )
-    parser.add_argument(
-        "--coherent-statements",
-        action="store_true",
-        help="Ensure truthful speakers' statements don't have conflicting accusations/vouchings",
-    )
 
     args = parser.parse_args()
 

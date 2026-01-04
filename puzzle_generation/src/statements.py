@@ -134,6 +134,8 @@ class Statement(ABC):
             return AtLeastOne(data["a_index"], data["b_index"])
         elif stmt_type == "ExactlyOne":
             return ExactlyOne(data["a_index"], data["b_index"])
+        elif stmt_type == "AtMostOne":
+            return AtMostOne(data["a_index"], data["b_index"])
         elif stmt_type == "IfNotAThenB":
             return IfNotAThenB(data["a_index"], data["b_index"])
         elif stmt_type == "Neither":
@@ -203,6 +205,10 @@ class Statement(ABC):
             if len(parts) != 3:
                 raise ValueError(f"Invalid IfNotAThenB format: {short_str}")
             return IfNotAThenB(int(parts[1]), int(parts[2]))
+        elif code == "T":  # AtMostOne
+            if len(parts) != 3:
+                raise ValueError(f"Invalid AtMostOne format: {short_str}")
+            return AtMostOne(int(parts[1]), int(parts[2]))
         elif code == "N":  # Neither
             if len(parts) != 3:
                 raise ValueError(f"Invalid Neither format: {short_str}")
@@ -481,6 +487,45 @@ class ExactlyOne(RelationshipStatement):
     def get_vouchings(self) -> set[tuple[int, int]]:
         """No vouchings - they cannot both be innocent or both be guilty."""
         return set()
+
+
+class AtMostOne(RelationshipStatement):
+    """Semantics: NOT(W[a] AND W[b]) - at most one of them is a werewolf."""
+
+    def __init__(self, a_index: int, b_index: int):
+        """Initialize an AtMostOne statement, normalizing indices for symmetry."""
+        # Normalize: always store min(a, b) as a_index, max(a, b) as b_index
+        super().__init__(min(a_index, b_index), max(a_index, b_index))
+
+    @property
+    def statement_id(self) -> str:
+        return f"NAND({self.a_index},{self.b_index})"
+
+    def evaluate_on_assignment(self, assignment: tuple[bool, ...]) -> bool:
+        # NOT(W[a] AND W[b]) = NOT W[a] OR NOT W[b]
+        return not (assignment[self.a_index] and assignment[self.b_index])
+
+    def to_solver_expr(self, W_vars: list) -> "BoolRef":
+        # NOT(W[a] AND W[b])
+        return z3.Not(z3.And(W_vars[self.a_index], W_vars[self.b_index]))
+
+    def to_english(self, names: list[str]) -> str:
+        return f"{names[self.a_index]} and {names[self.b_index]} behave so differently, at most one of them is a werewolf."
+
+    def complexity_cost(self) -> int:
+        return 1
+
+    def to_short_string(self) -> str:
+        """Return short string representation: T-a-b"""
+        return f"T-{self.a_index}-{self.b_index}"
+
+    def get_accusations(self) -> set[tuple[int, int]]:
+        """No accusations - this is a mutual vouching relationship (at most one guilty)."""
+        return set()
+
+    def get_vouchings(self) -> set[tuple[int, int]]:
+        """Mutual partial vouching - if one is guilty, the other is innocent."""
+        return {(self.a_index, self.b_index), (self.b_index, self.a_index)}
 
 
 class IfNotAThenB(RelationshipStatement):
