@@ -229,7 +229,7 @@ class AtMostOne extends RelationshipStatement {
   toEnglish(names) {
     return `${names[this.aIndex]} and ${
       names[this.bIndex]
-    } behave so differently, at most one of them is a wolf.`;
+    } are so different, at most one of them is a wolf.`;
   }
 }
 
@@ -337,12 +337,12 @@ class CountWerewolves extends CountStatement {
       const plural = this.count !== 1 ? "ves" : "f";
       const verb = this.count !== 1 ? "are" : "is";
       if (this.comparison === "exactly") {
-        return `I counted the pawprints! There ${verb} exactly ${this.count} werewol${plural} among my neighbors.`;
+        return `I counted the pawprints! There ${verb} exactly ${this.count} wol${plural} among my neighbors.`;
       } else if (this.comparison === "at_most") {
-        return `I've counted them all, and there ${verb} at most ${this.count} werewol${plural}.`;
+        return `I've seen the wolves, and there ${verb} at most ${this.count} of them.`;
       } else {
         // at_least
-        return `I saw at least ${this.count} werewol${plural} in the dark last night.`;
+        return `I looked at the bite marks. There are at least ${this.count} wol${plural} among my neighbors.`;
       }
     }
   }

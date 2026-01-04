@@ -13,6 +13,7 @@ from .statements import (
     AtLeastKWerewolves,
     AtLeastOne,
     AtMostKWerewolves,
+    AtMostOne,
     BothOrNeither,
     ExactlyKWerewolves,
     ExactlyOne,
@@ -293,6 +294,7 @@ def build_statement_library(config: GenerationConfig) -> list["Statement"]:
     symmetrical_classes = [
         BothOrNeither,
         AtLeastOne,
+        AtMostOne,
         ExactlyOne,
         Neither,
     ]
@@ -330,14 +332,20 @@ def build_statement_library(config: GenerationConfig) -> list["Statement"]:
         for k in range(1, N + 1):
             statements.append(ExactlyKWerewolves(all_indices, k))
 
-        # At most/at least K werewolves
-        for k in range(N + 1):
+        # At most K werewolves (k >= 2 to avoid equivalence with ExactlyK)
+        # Also exclude k=N since "at most N" is always true
+        for k in range(2, N):
             statements.append(AtMostKWerewolves(all_indices, k))
+
+        # At least K werewolves (k <= N-1 to avoid equivalence with ExactlyK)
+        # Also exclude k=0 since "at least 0" is always true
+        for k in range(2, N):
             statements.append(AtLeastKWerewolves(all_indices, k))
 
-        # Parity statements
-        statements.append(EvenNumberOfWerewolves(all_indices))
-        statements.append(OddNumberOfWerewolves(all_indices))
+        # Parity statements (only for N > 4 to avoid being too constraining)
+        if N > 4:
+            statements.append(EvenNumberOfWerewolves(all_indices))
+            statements.append(OddNumberOfWerewolves(all_indices))
 
         # Scoped statements (all except speaker)
         for speaker in range(N):
@@ -346,9 +354,10 @@ def build_statement_library(config: GenerationConfig) -> list["Statement"]:
                 # Exactly K in scope (minimum 1)
                 for k in range(1, len(scope) + 1):
                     statements.append(ExactlyKWerewolves(scope, k))
-                # Parity in scope
-                statements.append(EvenNumberOfWerewolves(scope))
-                statements.append(OddNumberOfWerewolves(scope))
+                # Parity in scope (only for scope size > 4)
+                if len(scope) > 4:
+                    statements.append(EvenNumberOfWerewolves(scope))
+                    statements.append(OddNumberOfWerewolves(scope))
 
     return statements
 
