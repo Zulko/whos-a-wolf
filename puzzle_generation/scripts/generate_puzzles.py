@@ -99,7 +99,7 @@ def main() -> None:
         min_werewolves=1,
         max_werewolves=N - 1,
         diverse_statements=True,
-        coherent_statements=args.coherent_statements,
+        coherent_statements=True,
     )
 
     # Load or build truth cache

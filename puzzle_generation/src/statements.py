@@ -138,21 +138,28 @@ class Statement(ABC):
             return IfNotAThenB(data["a_index"], data["b_index"])
         elif stmt_type == "Neither":
             return Neither(data["a_index"], data["b_index"])
+        # New unified CountWerewolves type
+        elif stmt_type == "CountWerewolves":
+            scope = tuple(data["scope_indices"])
+            count = data["count"]
+            comparison = data.get("comparison", "exactly")
+            return CountWerewolves(scope, count, comparison)
+        # Legacy count statement types (backwards compatibility)
         elif stmt_type == "ExactlyKWerewolves":
             scope = tuple(data["scope_indices"])
-            return ExactlyKWerewolves(scope, data["count"])
+            return CountWerewolves(scope, data["count"], "exactly")
         elif stmt_type == "AtMostKWerewolves":
             scope = tuple(data["scope_indices"])
-            return AtMostKWerewolves(scope, data["count"])
+            return CountWerewolves(scope, data["count"], "at_most")
         elif stmt_type == "AtLeastKWerewolves":
             scope = tuple(data["scope_indices"])
-            return AtLeastKWerewolves(scope, data["count"])
+            return CountWerewolves(scope, data["count"], "at_least")
         elif stmt_type == "EvenNumberOfWerewolves":
             scope = tuple(data["scope_indices"])
-            return EvenNumberOfWerewolves(scope)
+            return CountWerewolves(scope, "even")
         elif stmt_type == "OddNumberOfWerewolves":
             scope = tuple(data["scope_indices"])
-            return OddNumberOfWerewolves(scope)
+            return CountWerewolves(scope, "odd")
         else:
             raise ValueError(f"Unknown statement type: {stmt_type}")
 
@@ -200,35 +207,41 @@ class Statement(ABC):
             if len(parts) != 3:
                 raise ValueError(f"Invalid Neither format: {short_str}")
             return Neither(int(parts[1]), int(parts[2]))
-        # Count statements
+        # Count statements (all return CountWerewolves)
         elif code == "E":  # ExactlyKWerewolves: E-scope-count (scope uses dots)
             if len(parts) != 3:
-                raise ValueError(f"Invalid ExactlyKWerewolves format: {short_str}")
+                raise ValueError(
+                    f"Invalid CountWerewolves (exactly) format: {short_str}"
+                )
             scope = tuple(int(x) for x in parts[1].split("."))
             count = int(parts[2])
-            return ExactlyKWerewolves(scope, count)
+            return CountWerewolves(scope, count, "exactly")
         elif code == "M":  # AtMostKWerewolves: M-scope-count (scope uses dots)
             if len(parts) != 3:
-                raise ValueError(f"Invalid AtMostKWerewolves format: {short_str}")
+                raise ValueError(
+                    f"Invalid CountWerewolves (at_most) format: {short_str}"
+                )
             scope = tuple(int(x) for x in parts[1].split("."))
             count = int(parts[2])
-            return AtMostKWerewolves(scope, count)
+            return CountWerewolves(scope, count, "at_most")
         elif code == "L":  # AtLeastKWerewolves: L-scope-count (scope uses dots)
             if len(parts) != 3:
-                raise ValueError(f"Invalid AtLeastKWerewolves format: {short_str}")
+                raise ValueError(
+                    f"Invalid CountWerewolves (at_least) format: {short_str}"
+                )
             scope = tuple(int(x) for x in parts[1].split("."))
             count = int(parts[2])
-            return AtLeastKWerewolves(scope, count)
+            return CountWerewolves(scope, count, "at_least")
         elif code == "V":  # EvenNumberOfWerewolves: V-scope (scope uses dots)
             if len(parts) != 2:
-                raise ValueError(f"Invalid EvenNumberOfWerewolves format: {short_str}")
+                raise ValueError(f"Invalid CountWerewolves (even) format: {short_str}")
             scope = tuple(int(x) for x in parts[1].split("."))
-            return EvenNumberOfWerewolves(scope)
+            return CountWerewolves(scope, "even")
         elif code == "O":  # OddNumberOfWerewolves: O-scope (scope uses dots)
             if len(parts) != 2:
-                raise ValueError(f"Invalid OddNumberOfWerewolves format: {short_str}")
+                raise ValueError(f"Invalid CountWerewolves (odd) format: {short_str}")
             scope = tuple(int(x) for x in parts[1].split("."))
-            return OddNumberOfWerewolves(scope)
+            return CountWerewolves(scope, "odd")
         else:
             raise ValueError(f"Unknown statement code: {code}")
 
@@ -550,129 +563,167 @@ class Neither(RelationshipStatement):
 # Count Statement Subclasses
 
 
-class ExactlyKWerewolves(CountStatement):
-    """Semantics: SUM(W[i] for i in scope) == count"""
+class CountWerewolves(CountStatement):
+    """Unified count statement for werewolf constraints.
 
-    def __init__(self, scope_indices: tuple[int, ...], count: int):
-        """Initialize an exactly-k statement.
+    Semantics depend on count and comparison:
+    - count=int, comparison="exactly": SUM(W[i]) == count
+    - count=int, comparison="at_most": SUM(W[i]) <= count
+    - count=int, comparison="at_least": SUM(W[i]) >= count
+    - count="even": SUM(W[i]) % 2 == 0
+    - count="odd": SUM(W[i]) % 2 == 1
+    """
 
-        Args:
-            scope_indices: Tuple of villager indices in the scope
-            count: Exact number of werewolves required
-        """
-        super().__init__(scope_indices)
-        self.count = count
-
-    @property
-    def statement_id(self) -> str:
-        scope_str = ",".join(map(str, sorted(self.scope_indices)))
-        return f"COUNT_EQ(scope=[{scope_str}],count={self.count})"
-
-    def evaluate_on_assignment(self, assignment: tuple[bool, ...]) -> bool:
-        werewolf_count = sum(1 for i in self.scope_indices if assignment[i])
-        return werewolf_count == self.count
-
-    def to_solver_expr(self, W_vars: list) -> "BoolRef":
-        # SUM(W[i] for i in scope) == count
-        total = sum(z3.If(W_vars[i], 1, 0) for i in self.scope_indices)
-        return total == self.count
-
-    def to_english(self, names: list[str]) -> str:
-        scope_names = [names[i] for i in self.scope_indices]
-        if len(scope_names) == 1:
-            scope_desc = scope_names[0]
-        elif len(scope_names) <= 3:
-            scope_desc = ", ".join(scope_names[:-1]) + f", and {scope_names[-1]}"
-        else:
-            scope_desc = f"{len(scope_names)} villagers"
-        return f"Exactly {self.count} werewolf{'ves' if self.count != 1 else ''} among {scope_desc}."
-
-    def complexity_cost(self) -> int:
-        # Higher cost for count statements, especially exact counts
-        return 3
-
-    def to_short_string(self) -> str:
-        """Return short string representation: E-scope-count (scope uses dots, e.g., E-0.1.2-2)"""
-        scope_str = ".".join(map(str, sorted(self.scope_indices)))
-        return f"E-{scope_str}-{self.count}"
-
-    def to_dict(self) -> dict:
-        """Convert exactly-k statement to dictionary.
-
-        Returns:
-            Dictionary with 'type', 'scope_indices', and 'count' fields
-        """
-        return {
-            "type": self.__class__.__name__,
-            "scope_indices": list(self.scope_indices),  # Convert tuple to list for JSON
-            "count": self.count,
-        }
-
-    def get_accusations(self) -> set[tuple[int, int]]:
-        """No direct inter-person accusations for count statements."""
-        return set()
-
-    def get_vouchings(self) -> set[tuple[int, int]]:
-        """No direct inter-person vouchings for count statements."""
-        return set()
-
-
-class AtMostKWerewolves(CountStatement):
-    """Semantics: SUM(W[i] for i in scope) <= count"""
-
-    def __init__(self, scope_indices: tuple[int, ...], count: int):
-        """Initialize an at-most-k statement.
+    def __init__(
+        self,
+        scope_indices: tuple[int, ...],
+        count: int | str,
+        comparison: str = "exactly",
+    ):
+        """Initialize a count statement.
 
         Args:
             scope_indices: Tuple of villager indices in the scope
-            count: Maximum number of werewolves allowed
+            count: Either an int for numeric counts, or "odd"/"even" for parity
+            comparison: For int counts: "exactly", "at_most", or "at_least"
+                       Ignored for parity counts ("odd"/"even").
         """
         super().__init__(scope_indices)
+        if isinstance(count, str) and count not in ("odd", "even"):
+            raise ValueError(f"count must be int, 'odd', or 'even', got: {count}")
+        if isinstance(count, int) and comparison not in (
+            "exactly",
+            "at_most",
+            "at_least",
+        ):
+            raise ValueError(
+                f"comparison must be 'exactly', 'at_most', or 'at_least', got: {comparison}"
+            )
         self.count = count
+        self.comparison = comparison if isinstance(count, int) else None
+
+    @property
+    def _is_parity(self) -> bool:
+        """Return True if this is a parity statement."""
+        return isinstance(self.count, str)
 
     @property
     def statement_id(self) -> str:
         scope_str = ",".join(map(str, sorted(self.scope_indices)))
-        return f"COUNT_LE(scope=[{scope_str}],count={self.count})"
+        if self._is_parity:
+            if self.count == "even":
+                return f"COUNT_EVEN(scope=[{scope_str}])"
+            else:  # odd
+                return f"COUNT_ODD(scope=[{scope_str}])"
+        else:
+            if self.comparison == "exactly":
+                return f"COUNT_EQ(scope=[{scope_str}],count={self.count})"
+            elif self.comparison == "at_most":
+                return f"COUNT_LE(scope=[{scope_str}],count={self.count})"
+            else:  # at_least
+                return f"COUNT_GE(scope=[{scope_str}],count={self.count})"
 
     def evaluate_on_assignment(self, assignment: tuple[bool, ...]) -> bool:
         werewolf_count = sum(1 for i in self.scope_indices if assignment[i])
-        return werewolf_count <= self.count
+        if self._is_parity:
+            if self.count == "even":
+                return werewolf_count % 2 == 0
+            else:  # odd
+                return werewolf_count % 2 == 1
+        else:
+            if self.comparison == "exactly":
+                return werewolf_count == self.count
+            elif self.comparison == "at_most":
+                return werewolf_count <= self.count
+            else:  # at_least
+                return werewolf_count >= self.count
 
     def to_solver_expr(self, W_vars: list) -> "BoolRef":
-        # SUM(W[i] for i in scope) <= count
         total = sum(z3.If(W_vars[i], 1, 0) for i in self.scope_indices)
-        return total <= self.count
+        if self._is_parity:
+            if self.count == "even":
+                return total % 2 == 0
+            else:  # odd
+                return total % 2 == 1
+        else:
+            if self.comparison == "exactly":
+                return total == self.count
+            elif self.comparison == "at_most":
+                return total <= self.count
+            else:  # at_least
+                return total >= self.count
 
-    def to_english(self, names: list[str]) -> str:
+    def _scope_description(self, names: list[str]) -> str:
+        """Generate English description of the scope."""
         scope_names = [names[i] for i in self.scope_indices]
         if len(scope_names) == 1:
-            scope_desc = scope_names[0]
+            return scope_names[0]
         elif len(scope_names) <= 3:
-            scope_desc = ", ".join(scope_names[:-1]) + f", and {scope_names[-1]}"
+            return ", ".join(scope_names[:-1]) + f", and {scope_names[-1]}"
         else:
-            scope_desc = f"{len(scope_names)} villagers"
-        return f"At most {self.count} werewolf{'ves' if self.count != 1 else ''} among {scope_desc}."
+            return f"{len(scope_names)} villagers"
+
+    def to_english(self, names: list[str]) -> str:
+        scope_desc = self._scope_description(names)
+        if self._is_parity:
+            parity = "even" if self.count == "even" else "odd"
+            return f"An {parity} number of werewolves among {scope_desc}."
+        else:
+            count_val = self.count
+            wolves_word = "werewolf" if count_val == 1 else "werewolves"
+            if self.comparison == "exactly":
+                return f"Exactly {count_val} {wolves_word} among {scope_desc}."
+            elif self.comparison == "at_most":
+                return f"At most {count_val} {wolves_word} among {scope_desc}."
+            else:  # at_least
+                return f"At least {count_val} {wolves_word} among {scope_desc}."
 
     def complexity_cost(self) -> int:
-        return 2
+        if self._is_parity:
+            return 2
+        elif self.comparison == "exactly":
+            return 3  # Higher cost for exact counts
+        else:
+            return 2
 
     def to_short_string(self) -> str:
-        """Return short string representation: M-scope-count (scope uses dots, e.g., M-0.1-1)"""
+        """Return short string representation.
+
+        Format:
+        - E-scope-count for exactly (e.g., E-0.1.2-2)
+        - M-scope-count for at_most (e.g., M-0.1-1)
+        - L-scope-count for at_least (e.g., L-0.1.2.3-2)
+        - V-scope for even (e.g., V-0.1.2)
+        - O-scope for odd (e.g., O-0.1)
+        """
         scope_str = ".".join(map(str, sorted(self.scope_indices)))
-        return f"M-{scope_str}-{self.count}"
+        if self._is_parity:
+            if self.count == "even":
+                return f"V-{scope_str}"
+            else:  # odd
+                return f"O-{scope_str}"
+        else:
+            if self.comparison == "exactly":
+                return f"E-{scope_str}-{self.count}"
+            elif self.comparison == "at_most":
+                return f"M-{scope_str}-{self.count}"
+            else:  # at_least
+                return f"L-{scope_str}-{self.count}"
 
     def to_dict(self) -> dict:
-        """Convert at-most-k statement to dictionary.
+        """Convert count statement to dictionary.
 
         Returns:
-            Dictionary with 'type', 'scope_indices', and 'count' fields
+            Dictionary with 'type', 'scope_indices', 'count', and optionally 'comparison'
         """
-        return {
-            "type": self.__class__.__name__,
-            "scope_indices": list(self.scope_indices),  # Convert tuple to list for JSON
+        result = {
+            "type": "CountWerewolves",
+            "scope_indices": list(self.scope_indices),
             "count": self.count,
         }
+        if not self._is_parity:
+            result["comparison"] = self.comparison
+        return result
 
     def get_accusations(self) -> set[tuple[int, int]]:
         """No direct inter-person accusations for count statements."""
@@ -683,155 +734,42 @@ class AtMostKWerewolves(CountStatement):
         return set()
 
 
-class AtLeastKWerewolves(CountStatement):
-    """Semantics: SUM(W[i] for i in scope) >= count"""
+# Backwards-compatible factory functions for old class names
+def ExactlyKWerewolves(scope_indices: tuple[int, ...], count: int) -> CountWerewolves:
+    """Create a CountWerewolves with comparison='exactly'.
 
-    def __init__(self, scope_indices: tuple[int, ...], count: int):
-        """Initialize an at-least-k statement.
-
-        Args:
-            scope_indices: Tuple of villager indices in the scope
-            count: Minimum number of werewolves required
-        """
-        super().__init__(scope_indices)
-        self.count = count
-
-    @property
-    def statement_id(self) -> str:
-        scope_str = ",".join(map(str, sorted(self.scope_indices)))
-        return f"COUNT_GE(scope=[{scope_str}],count={self.count})"
-
-    def evaluate_on_assignment(self, assignment: tuple[bool, ...]) -> bool:
-        werewolf_count = sum(1 for i in self.scope_indices if assignment[i])
-        return werewolf_count >= self.count
-
-    def to_solver_expr(self, W_vars: list) -> "BoolRef":
-        # SUM(W[i] for i in scope) >= count
-        total = sum(z3.If(W_vars[i], 1, 0) for i in self.scope_indices)
-        return total >= self.count
-
-    def to_english(self, names: list[str]) -> str:
-        scope_names = [names[i] for i in self.scope_indices]
-        if len(scope_names) == 1:
-            scope_desc = scope_names[0]
-        elif len(scope_names) <= 3:
-            scope_desc = ", ".join(scope_names[:-1]) + f", and {scope_names[-1]}"
-        else:
-            scope_desc = f"{len(scope_names)} villagers"
-        return f"At least {self.count} werewolf{'ves' if self.count != 1 else ''} among {scope_desc}."
-
-    def complexity_cost(self) -> int:
-        return 2
-
-    def to_short_string(self) -> str:
-        """Return short string representation: L-scope-count (scope uses dots, e.g., L-0.1.2.3-2)"""
-        scope_str = ".".join(map(str, sorted(self.scope_indices)))
-        return f"L-{scope_str}-{self.count}"
-
-    def to_dict(self) -> dict:
-        """Convert at-least-k statement to dictionary.
-
-        Returns:
-            Dictionary with 'type', 'scope_indices', and 'count' fields
-        """
-        return {
-            "type": self.__class__.__name__,
-            "scope_indices": list(self.scope_indices),  # Convert tuple to list for JSON
-            "count": self.count,
-        }
-
-    def get_accusations(self) -> set[tuple[int, int]]:
-        """No direct inter-person accusations for count statements."""
-        return set()
-
-    def get_vouchings(self) -> set[tuple[int, int]]:
-        """No direct inter-person vouchings for count statements."""
-        return set()
+    Backwards-compatible alias for ExactlyKWerewolves.
+    """
+    return CountWerewolves(scope_indices, count, comparison="exactly")
 
 
-class EvenNumberOfWerewolves(CountStatement):
-    """Semantics: SUM(W[i] for i in scope) % 2 == 0"""
+def AtMostKWerewolves(scope_indices: tuple[int, ...], count: int) -> CountWerewolves:
+    """Create a CountWerewolves with comparison='at_most'.
 
-    @property
-    def statement_id(self) -> str:
-        scope_str = ",".join(map(str, sorted(self.scope_indices)))
-        return f"COUNT_EVEN(scope=[{scope_str}])"
-
-    def evaluate_on_assignment(self, assignment: tuple[bool, ...]) -> bool:
-        werewolf_count = sum(1 for i in self.scope_indices if assignment[i])
-        return werewolf_count % 2 == 0
-
-    def to_solver_expr(self, W_vars: list) -> "BoolRef":
-        # SUM(W[i] for i in scope) % 2 == 0
-        total = sum(z3.If(W_vars[i], 1, 0) for i in self.scope_indices)
-        return total % 2 == 0
-
-    def to_english(self, names: list[str]) -> str:
-        scope_names = [names[i] for i in self.scope_indices]
-        if len(scope_names) == 1:
-            scope_desc = scope_names[0]
-        elif len(scope_names) <= 3:
-            scope_desc = ", ".join(scope_names[:-1]) + f", and {scope_names[-1]}"
-        else:
-            scope_desc = f"{len(scope_names)} villagers"
-        return f"An even number of werewolves among {scope_desc}."
-
-    def complexity_cost(self) -> int:
-        return 2
-
-    def to_short_string(self) -> str:
-        """Return short string representation: V-scope (scope uses dots, e.g., V-0.1.2)"""
-        scope_str = ".".join(map(str, sorted(self.scope_indices)))
-        return f"V-{scope_str}"
-
-    def get_accusations(self) -> set[tuple[int, int]]:
-        """No direct inter-person accusations for count statements."""
-        return set()
-
-    def get_vouchings(self) -> set[tuple[int, int]]:
-        """No direct inter-person vouchings for count statements."""
-        return set()
+    Backwards-compatible alias for AtMostKWerewolves.
+    """
+    return CountWerewolves(scope_indices, count, comparison="at_most")
 
 
-class OddNumberOfWerewolves(CountStatement):
-    """Semantics: SUM(W[i] for i in scope) % 2 == 1"""
+def AtLeastKWerewolves(scope_indices: tuple[int, ...], count: int) -> CountWerewolves:
+    """Create a CountWerewolves with comparison='at_least'.
 
-    @property
-    def statement_id(self) -> str:
-        scope_str = ",".join(map(str, sorted(self.scope_indices)))
-        return f"COUNT_ODD(scope=[{scope_str}])"
+    Backwards-compatible alias for AtLeastKWerewolves.
+    """
+    return CountWerewolves(scope_indices, count, comparison="at_least")
 
-    def evaluate_on_assignment(self, assignment: tuple[bool, ...]) -> bool:
-        werewolf_count = sum(1 for i in self.scope_indices if assignment[i])
-        return werewolf_count % 2 == 1
 
-    def to_solver_expr(self, W_vars: list) -> "BoolRef":
-        # SUM(W[i] for i in scope) % 2 == 1
-        total = sum(z3.If(W_vars[i], 1, 0) for i in self.scope_indices)
-        return total % 2 == 1
+def EvenNumberOfWerewolves(scope_indices: tuple[int, ...]) -> CountWerewolves:
+    """Create a CountWerewolves with count='even'.
 
-    def to_english(self, names: list[str]) -> str:
-        scope_names = [names[i] for i in self.scope_indices]
-        if len(scope_names) == 1:
-            scope_desc = scope_names[0]
-        elif len(scope_names) <= 3:
-            scope_desc = ", ".join(scope_names[:-1]) + f", and {scope_names[-1]}"
-        else:
-            scope_desc = f"{len(scope_names)} villagers"
-        return f"An odd number of werewolves among {scope_desc}."
+    Backwards-compatible alias for EvenNumberOfWerewolves.
+    """
+    return CountWerewolves(scope_indices, "even")
 
-    def complexity_cost(self) -> int:
-        return 2
 
-    def to_short_string(self) -> str:
-        """Return short string representation: O-scope (scope uses dots, e.g., O-0.1)"""
-        scope_str = ".".join(map(str, sorted(self.scope_indices)))
-        return f"O-{scope_str}"
+def OddNumberOfWerewolves(scope_indices: tuple[int, ...]) -> CountWerewolves:
+    """Create a CountWerewolves with count='odd'.
 
-    def get_accusations(self) -> set[tuple[int, int]]:
-        """No direct inter-person accusations for count statements."""
-        return set()
-
-    def get_vouchings(self) -> set[tuple[int, int]]:
-        """No direct inter-person vouchings for count statements."""
-        return set()
+    Backwards-compatible alias for OddNumberOfWerewolves.
+    """
+    return CountWerewolves(scope_indices, "odd")

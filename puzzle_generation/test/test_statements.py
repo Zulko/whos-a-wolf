@@ -202,23 +202,27 @@ def test_statement_dict_structure():
     assert rel_dict["a_index"] == 0
     assert rel_dict["b_index"] == 1
 
-    # Count statement with count
+    # Count statement with count (now uses unified CountWerewolves)
     count_stmt = ExactlyKWerewolves((0, 1, 2), 2)
     count_dict = count_stmt.to_dict()
     assert "type" in count_dict
-    assert count_dict["type"] == "ExactlyKWerewolves"
+    assert count_dict["type"] == "CountWerewolves"
     assert "scope_indices" in count_dict
     assert "count" in count_dict
+    assert "comparison" in count_dict
     assert count_dict["scope_indices"] == [0, 1, 2]  # Should be list, not tuple
     assert count_dict["count"] == 2
+    assert count_dict["comparison"] == "exactly"
 
-    # Count statement without count
+    # Count statement with parity (now uses unified CountWerewolves)
     parity_stmt = EvenNumberOfWerewolves((0, 1, 2))
     parity_dict = parity_stmt.to_dict()
     assert "type" in parity_dict
-    assert parity_dict["type"] == "EvenNumberOfWerewolves"
+    assert parity_dict["type"] == "CountWerewolves"
     assert "scope_indices" in parity_dict
-    assert "count" not in parity_dict
+    assert "count" in parity_dict
+    assert parity_dict["count"] == "even"
+    assert "comparison" not in parity_dict  # No comparison for parity
     assert parity_dict["scope_indices"] == [0, 1, 2]  # Should be list, not tuple
 
 
