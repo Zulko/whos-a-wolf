@@ -1,5 +1,10 @@
 /** Statement classes representing boolean statements about werewolves. */
 
+/** Returns possessive form: "James'" for names ending in s, "John's" otherwise */
+function possessive(name) {
+  return name.endsWith("s") ? `${name}'` : `${name}'s`;
+}
+
 class Statement {
   /**
    * Create statement from short string representation.
@@ -152,9 +157,9 @@ class IfAThenB extends RelationshipStatement {
   }
 
   toEnglish(names) {
-    return `${names[this.bIndex]} has always been under ${
+    return `${names[this.bIndex]} has always been under ${possessive(
       names[this.aIndex]
-    }'s spell. If ${names[this.aIndex]} is a werewolf, then so is ${
+    )} spell. If ${names[this.aIndex]} is a werewolf, then so is ${
       names[this.bIndex]
     }.`;
   }
@@ -229,7 +234,7 @@ class AtMostOne extends RelationshipStatement {
   toEnglish(names) {
     return `${names[this.aIndex]} and ${
       names[this.bIndex]
-    } are so different, at most one of them is a wolf.`;
+    } are so unalike! Clearly they couldn't both be wolves.`;
   }
 }
 

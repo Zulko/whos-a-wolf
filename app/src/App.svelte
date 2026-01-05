@@ -339,7 +339,7 @@
 
     .intro {
       font-size: 1.1rem;
-      line-height: 1.3;
+      line-height: 1.2;
     }
 
     h1 {

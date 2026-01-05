@@ -269,7 +269,7 @@
     padding-left: 0.25rem;
   }
 
-  @media (max-width: 600px) {
+  @media (max-width: 500px) {
     .villager-card {
       height: 65px;
     }
@@ -292,7 +292,8 @@
     }
 
     .statement {
-      font-size: 1rem;
+      font-size: 1.1rem;
+      line-height: 1rem;
     }
   }
 </style>
