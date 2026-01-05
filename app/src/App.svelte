@@ -304,6 +304,17 @@
   >
 </footer>
 
+<footer class="credit">
+  Made with 🐾 by Zulko and published on
+  <a
+    href="https://github.com/Zulko/whos-a-wolf"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    Github
+  </a>
+</footer>
+
 <style>
   main {
     max-width: 1000px;
@@ -510,5 +521,19 @@
     opacity: 1;
     border-color: var(--text-secondary);
     background: var(--card-border);
+  }
+
+  .credit {
+    text-align: center;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    opacity: 0.6;
+    padding: 0 0 1.25rem;
+  }
+
+  .credit a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
   }
 </style>
