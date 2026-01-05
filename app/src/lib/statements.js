@@ -251,7 +251,7 @@ class ExactlyOne extends RelationshipStatement {
   toFrench(names) {
     return `${names[this.aIndex]} et ${
       names[this.bIndex]
-    } se détestent si férocement qu'il est clair que l'un est un loup et l'autre non.`;
+    } se haissent avec une telle férocité qu'il est clair que l'un est un loup et l'autre non.`;
   }
 }
 
@@ -276,7 +276,7 @@ class AtMostOne extends RelationshipStatement {
   toFrench(names) {
     return `${names[this.aIndex]} et ${
       names[this.bIndex]
-    } sont si différents ! Il est clair qu'ils ne peuvent pas tous les deux être des loups.`;
+    } sont si différents ! Clairement, ils ne peuvent pas tous les deux être des loups.`;
   }
 }
 
@@ -298,9 +298,9 @@ class IfNotAThenB extends RelationshipStatement {
   toFrench(names) {
     return `J'ai vu ${names[this.bIndex]} rôder autour de ${
       names[this.aIndex]
-    } une fois. Si ${names[this.aIndex]} n'est pas un loup, alors ${
+    }. Si ${names[this.aIndex]} n'est pas un loup, alors ${
       names[this.bIndex]
-    } est un loup.`;
+    } en est un.`;
   }
 }
 
@@ -322,9 +322,9 @@ class Neither extends RelationshipStatement {
   }
 
   toFrench(names) {
-    return `Je connais ${names[this.aIndex]} et ${
+    return `Je connais très bien ${names[this.aIndex]} et ${
       names[this.bIndex]
-    } très bien, et aucun d'eux n'est un loup.`;
+    } et aucun d'eux n'est un loup.`;
   }
 }
 
@@ -422,17 +422,17 @@ class CountWerewolves extends CountStatement {
   toFrench(names) {
     if (this._isParity) {
       if (this.count === "even") {
-        return "Les empreintes de pattes montrent que ces bêtes vont par paires. Il y a un nombre pair de loups parmi mes voisins.";
+        return "Les empreintes montrent que ces bêtes vont par paires. Il y a un nombre pair de loups parmi mes voisins.";
       } else {
-        return "Les loups chassent par paires mais j'en ai vu un seul ! Il y a un nombre impair de loups parmi mes voisins.";
+        return "Les loups chassent en duo mais j'en ai vu un solitaire ! Il y a un nombre impair de loups parmi mes voisins.";
       }
     } else {
       const isSingular = this.count === 1;
       if (this.comparison === "exactly") {
         if (isSingular) {
-          return "J'ai compté les empreintes de pattes ! Il y a exactement 1 loup parmi mes voisins.";
+          return "J'ai compté les empreintes! Il y a exactement 1 loup parmi mes voisins.";
         } else {
-          return `J'ai compté les empreintes de pattes ! Il y a exactement ${this.count} loups parmi mes voisins.`;
+          return `J'ai compté les empreintes! Il y a exactement ${this.count} loups parmi mes voisins.`;
         }
       } else if (this.comparison === "at_most") {
         if (isSingular) {
@@ -443,9 +443,9 @@ class CountWerewolves extends CountStatement {
       } else {
         // at_least
         if (isSingular) {
-          return "J'ai regardé les marques de morsure. Il y a au moins 1 loup parmi mes voisins.";
+          return "J'ai étudié les marques de morsure. Il y a au moins 1 loup parmi mes voisins.";
         } else {
-          return `J'ai regardé les marques de morsure. Il y a au moins ${this.count} loups parmi mes voisins.`;
+          return `J'ai étudié les marques de morsure. Il y a au moins ${this.count} loups parmi mes voisins.`;
         }
       }
     }
