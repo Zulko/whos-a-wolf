@@ -1,4 +1,5 @@
 <script>
+  import { _, locale } from "svelte-i18n";
   import { getDefaultCharacters } from "../lib/characters.js";
 
   let {
@@ -15,6 +16,16 @@
   const characters = $derived(getDefaultCharacters(numVillagers));
   const villager = $derived(characters.find((c) => c.name === villagerName));
   const shortName = $derived(villager ? villager.shortName : villagerName);
+
+  const statementText = $derived.by(() => {
+    if (!statement) return "";
+    // Use $locale for reactive subscription to locale changes
+    const names = characters.map((c) => c.shortName);
+    // Use toFrench if locale is French, otherwise use toEnglish
+    return $locale === "fr"
+      ? statement.toFrench(names)
+      : statement.toEnglish(names);
+  });
 
   function getImagePath() {
     const baseUrl = import.meta.env.MODE === "production" ? "/whos-a-wolf" : "";
@@ -73,7 +84,7 @@
   }
 
   function getSuspicionText() {
-    return suspicion.charAt(0).toUpperCase() + suspicion.slice(1);
+    return $_("suspicions." + suspicion);
   }
 </script>
 
@@ -117,7 +128,7 @@
       </div>
     </div>
     <div class="statement">
-      {statement ? statement.toEnglish(characters.map((c) => c.shortName)) : ""}
+      {statementText}
     </div>
   </div>
 </div>

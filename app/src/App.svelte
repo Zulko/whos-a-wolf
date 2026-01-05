@@ -1,11 +1,14 @@
 <script>
   import { onMount } from "svelte";
+  import { _, locale } from "svelte-i18n";
   import { getDefaultCharacters } from "./lib/characters.js";
   import {
     getPuzzleFromURL,
     parsePuzzleFromString,
     updatePuzzleURL,
     getRandomPuzzle,
+    getLangFromURL,
+    updateLangURL,
   } from "./lib/puzzle.js";
   import VillagerCard from "./components/VillagerCard.svelte";
   import NewGameModal from "./components/NewGameModal.svelte";
@@ -17,8 +20,10 @@
   let showNewGameModal = $state(false);
   let showShareModal = $state(false);
   let theme = $state("system"); // "light" | "dark" | "system"
+  let currentLang = $state("en");
 
   const characters = $derived(getDefaultCharacters(numVillagers));
+  let i18nReady = $state(false);
 
   // Computed: decision_error
   const decisionError = $derived.by(() => {
@@ -30,15 +35,15 @@
 
     // Check: at least one werewolf
     if (werewolfCount === 0) {
-      return "We know that at least one of villager is a werewolf. Click on the characters to change your suspicions.";
+      return $_("errors.noWerewolf");
     }
 
     // Check: exactly one shill
     if (shillCount === 0) {
-      return "We know that one villager must be a shill.";
+      return $_("errors.noShill");
     }
     if (shillCount > 1) {
-      return "We know that exactly one villager must bea shill.";
+      return $_("errors.tooManyShills");
     }
 
     // Check statement consistency
@@ -59,13 +64,16 @@
       if (suspicion === "werewolf" || suspicion === "shill") {
         // Werewolves and shills lie: statement must be FALSE
         if (statementResult) {
-          const role = suspicion === "werewolf" ? "werewolf" : "shill";
-          return `You suspect ${char.name} of being a ${role}, yet according to your other suspicions, they are not lying.`;
+          const errorKey =
+            suspicion === "werewolf"
+              ? "errors.werewolfNotLying"
+              : "errors.shillNotLying";
+          return $_(errorKey, { values: { name: char.name } });
         }
       } else if (suspicion === "truthful") {
         // Truthful villagers tell truth: statement must be TRUE
         if (!statementResult) {
-          return `You marked ${char.name} as truthful, yet their statement disagrees with the rest of your suspicions.`;
+          return $_("errors.truthfulLying", { values: { name: char.name } });
         }
       }
     }
@@ -111,7 +119,29 @@
     }
   }
 
-  onMount(() => {
+  function switchLanguage(newLang) {
+    currentLang = newLang;
+    locale.set(newLang);
+    updateLangURL(newLang);
+  }
+
+  onMount(async () => {
+    // Wait a tick to ensure i18n is initialized from main.js
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    // Check URL for language preference
+    const urlLang = getLangFromURL();
+    if (urlLang && (urlLang === "en" || urlLang === "fr")) {
+      currentLang = urlLang;
+      locale.set(urlLang);
+    } else {
+      currentLang = "en";
+      locale.set("en");
+    }
+
+    // Mark as ready
+    i18nReady = true;
+
     // Load saved theme preference
     const savedTheme = localStorage.getItem("theme") || "system";
     setTheme(savedTheme);
@@ -184,48 +214,71 @@
   });
 </script>
 
-<main>
-  <h1>Who's a Wolf ?</h1>
-
-  <p class="intro">
-    You’ve been sent to gather statements from the last villagers of Howlmore
-    Town after a string of werewolf attacks. One or more are lying because they
-    are secretly werewolves. One other villager, you were told, is a shill paid
-    by the werewolves to lie.
-    <br /><br />
-    Can you find who's a werewolf, who's an honest villager, and who is the lying
-    shill?
-  </p>
-
-  <div class="villagers-grid">
-    {#each characters as char}
-      <VillagerCard
-        villagerName={char.name}
-        statement={statements.get(char.name)}
-        suspicion={suspicions.get(char.name) || "truthful"}
-        isSolved={decisionError === null}
-        {numVillagers}
-        onSuspicionChange={(newSuspicion) =>
-          handleSuspicionChange(char.name, newSuspicion)}
-      />
-    {/each}
-  </div>
-
-  {#if decisionError}
-    <div class="error-message">{decisionError}</div>
-  {:else}
-    <div class="success-message">
-      🎉 You solved the case! Congratulations! 🎉
+{#if i18nReady}
+  <main>
+    <div class="language-switcher">
+      <button
+        class="lang-btn"
+        class:active={currentLang === "en"}
+        onclick={() => switchLanguage("en")}
+        title="English"
+        aria-label="Switch to English"
+      >
+        🇬🇧
+      </button>
+      <button
+        class="lang-btn"
+        class:active={currentLang === "fr"}
+        onclick={() => switchLanguage("fr")}
+        title="Français"
+        aria-label="Switch to French"
+      >
+        🇫🇷
+      </button>
     </div>
-  {/if}
 
-  <div class="action-buttons">
-    <button class="share-button" onclick={openShareModal}
-      >Share this puzzle</button
-    >
-    <button class="new-game-button" onclick={openNewGameModal}>New game</button>
-  </div>
-</main>
+    <h1>{$_("app.title")}</h1>
+
+    <p class="intro">
+      {@html $_("app.intro").replace(/\n/g, "<br />")}
+    </p>
+
+    <div class="villagers-grid">
+      {#each characters as char}
+        <VillagerCard
+          villagerName={char.name}
+          statement={statements.get(char.name)}
+          suspicion={suspicions.get(char.name) || "truthful"}
+          isSolved={decisionError === null}
+          {numVillagers}
+          onSuspicionChange={(newSuspicion) =>
+            handleSuspicionChange(char.name, newSuspicion)}
+        />
+      {/each}
+    </div>
+
+    {#if decisionError}
+      <div class="error-message">{decisionError}</div>
+    {:else}
+      <div class="success-message">
+        {$_("app.successMessage")}
+      </div>
+    {/if}
+
+    <div class="action-buttons">
+      <button class="share-button" onclick={openShareModal}
+        >{$_("app.shareButton")}</button
+      >
+      <button class="new-game-button" onclick={openNewGameModal}
+        >{$_("app.newGameButton")}</button
+      >
+    </div>
+  </main>
+{:else}
+  <main>
+    <div style="text-align: center; padding: 2rem;">Loading...</div>
+  </main>
+{/if}
 
 <NewGameModal bind:open={showNewGameModal} onNewGame={handleNewGame} />
 <ShareModal bind:open={showShareModal} />
@@ -422,5 +475,40 @@
     background: var(--text-secondary);
     color: var(--bg-color);
     border-color: var(--text-secondary);
+  }
+
+  .language-switcher {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem 0;
+  }
+
+  .lang-btn {
+    width: 1.8rem;
+    height: 1.8rem;
+    padding: 0;
+    font-size: 1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    opacity: 0.6;
+  }
+
+  .lang-btn:hover {
+    opacity: 1;
+    border-color: var(--text-secondary);
+  }
+
+  .lang-btn.active {
+    opacity: 1;
+    border-color: var(--text-secondary);
+    background: var(--card-border);
   }
 </style>

@@ -123,12 +123,22 @@ class Statement {
   }
 
   /**
-   * Convert this statement to English text.
+   * Convert this statement to localized text (respects current locale).
    * @param {string[]} names - List of villager names, where names[i] is the name of villager i
-   * @returns {string} English description of this statement
+   * @returns {string} Localized description of this statement
    */
   toEnglish(names) {
     throw new Error("toEnglish must be implemented by subclass");
+  }
+
+  /**
+   * Convert this statement to French text.
+   * @param {string[]} names - List of villager names, where names[i] is the name of villager i
+   * @returns {string} French description of this statement
+   */
+  toFrench(names) {
+    // Default implementation: use toEnglish with French locale
+    return this.toEnglish(names);
   }
 }
 
@@ -163,6 +173,14 @@ class IfAThenB extends RelationshipStatement {
       names[this.bIndex]
     }.`;
   }
+
+  toFrench(names) {
+    return `${names[this.bIndex]} a toujours été sous le charme de ${
+      names[this.aIndex]
+    }. Si ${names[this.aIndex]} est un loup-garou, alors ${
+      names[this.bIndex]
+    } aussi.`;
+  }
 }
 
 class BothOrNeither extends RelationshipStatement {
@@ -180,6 +198,12 @@ class BothOrNeither extends RelationshipStatement {
     return `${names[this.aIndex]} and ${
       names[this.bIndex]
     } are inseparable. Either both are wolves, or neither is.`;
+  }
+
+  toFrench(names) {
+    return `${names[this.aIndex]} et ${
+      names[this.bIndex]
+    } sont inséparables. Soit les deux sont des loups, soit aucun ne l'est.`;
   }
 }
 
@@ -199,6 +223,12 @@ class AtLeastOne extends RelationshipStatement {
       names[this.bIndex]
     } is a wolf: my Timmy was going to meet them the night he was eaten.`;
   }
+
+  toFrench(names) {
+    return `Au moins l'un de ${names[this.aIndex]} et ${
+      names[this.bIndex]
+    } est un loup : mon Timmy allait les rencontrer la nuit où il a été dévoré.`;
+  }
 }
 
 class ExactlyOne extends RelationshipStatement {
@@ -216,6 +246,12 @@ class ExactlyOne extends RelationshipStatement {
     return `${names[this.aIndex]} and ${
       names[this.bIndex]
     } hate each other so ferociously, it is clear one is a wolf and the other isn't.`;
+  }
+
+  toFrench(names) {
+    return `${names[this.aIndex]} et ${
+      names[this.bIndex]
+    } se détestent si férocement qu'il est clair que l'un est un loup et l'autre non.`;
   }
 }
 
@@ -236,6 +272,12 @@ class AtMostOne extends RelationshipStatement {
       names[this.bIndex]
     } are so unalike! Clearly they couldn't both be wolves.`;
   }
+
+  toFrench(names) {
+    return `${names[this.aIndex]} et ${
+      names[this.bIndex]
+    } sont si différents ! Il est clair qu'ils ne peuvent pas tous les deux être des loups.`;
+  }
 }
 
 class IfNotAThenB extends RelationshipStatement {
@@ -251,6 +293,14 @@ class IfNotAThenB extends RelationshipStatement {
     } once. If ${names[this.aIndex]} is not a wolf, then ${
       names[this.bIndex]
     } is a wolf.`;
+  }
+
+  toFrench(names) {
+    return `J'ai vu ${names[this.bIndex]} rôder autour de ${
+      names[this.aIndex]
+    } une fois. Si ${names[this.aIndex]} n'est pas un loup, alors ${
+      names[this.bIndex]
+    } est un loup.`;
   }
 }
 
@@ -269,6 +319,12 @@ class Neither extends RelationshipStatement {
     return `I know ${names[this.aIndex]} and ${
       names[this.bIndex]
     } very well, and neither of them is a wolf.`;
+  }
+
+  toFrench(names) {
+    return `Je connais ${names[this.aIndex]} et ${
+      names[this.bIndex]
+    } très bien, et aucun d'eux n'est un loup.`;
   }
 }
 
@@ -334,20 +390,63 @@ class CountWerewolves extends CountStatement {
   toEnglish(names) {
     if (this._isParity) {
       if (this.count === "even") {
-        return `The pawprints show these beasts go by pair. There's an even number of wolves among my neighbors.`;
+        return "The pawprints show these beasts go by pair. There's an even number of wolves among my neighbors.";
       } else {
-        return `Wolves hunt by pair but I saw a lone one! There's an odd number of wolves among my neighbors.`;
+        return "Wolves hunt by pair but I saw a lone one! There's an odd number of wolves among my neighbors.";
       }
     } else {
-      const plural = this.count !== 1 ? "ves" : "f";
-      const verb = this.count !== 1 ? "are" : "is";
+      const isSingular = this.count === 1;
       if (this.comparison === "exactly") {
-        return `I counted the pawprints! There ${verb} exactly ${this.count} wol${plural} among my neighbors.`;
+        if (isSingular) {
+          return "I counted the pawprints! There is exactly 1 wolf among my neighbors.";
+        } else {
+          return `I counted the pawprints! There are exactly ${this.count} wolves among my neighbors.`;
+        }
       } else if (this.comparison === "at_most") {
-        return `I've seen the wolves, and there ${verb} at most ${this.count} of them.`;
+        if (isSingular) {
+          return "I've seen the wolves, and there is at most 1 of them.";
+        } else {
+          return `I've seen the wolves, and there are at most ${this.count} of them.`;
+        }
       } else {
         // at_least
-        return `I looked at the bite marks. There are at least ${this.count} wol${plural} among my neighbors.`;
+        if (isSingular) {
+          return "I looked at the bite marks. There is at least 1 wolf among my neighbors.";
+        } else {
+          return `I looked at the bite marks. There are at least ${this.count} wolves among my neighbors.`;
+        }
+      }
+    }
+  }
+
+  toFrench(names) {
+    if (this._isParity) {
+      if (this.count === "even") {
+        return "Les empreintes de pattes montrent que ces bêtes vont par paires. Il y a un nombre pair de loups parmi mes voisins.";
+      } else {
+        return "Les loups chassent par paires mais j'en ai vu un seul ! Il y a un nombre impair de loups parmi mes voisins.";
+      }
+    } else {
+      const isSingular = this.count === 1;
+      if (this.comparison === "exactly") {
+        if (isSingular) {
+          return "J'ai compté les empreintes de pattes ! Il y a exactement 1 loup parmi mes voisins.";
+        } else {
+          return `J'ai compté les empreintes de pattes ! Il y a exactement ${this.count} loups parmi mes voisins.`;
+        }
+      } else if (this.comparison === "at_most") {
+        if (isSingular) {
+          return "J'ai vu les loups, et il y en a au plus 1.";
+        } else {
+          return `J'ai vu les loups, et il y en a au plus ${this.count}.`;
+        }
+      } else {
+        // at_least
+        if (isSingular) {
+          return "J'ai regardé les marques de morsure. Il y a au moins 1 loup parmi mes voisins.";
+        } else {
+          return `J'ai regardé les marques de morsure. Il y a au moins ${this.count} loups parmi mes voisins.`;
+        }
       }
     }
   }

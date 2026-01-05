@@ -1,0 +1,66 @@
+{
+  "app": {
+    "title": "Qui est un Loup ?",
+    "intro": "Vous avez été envoyé pour recueillir les déclarations des derniers villageois de Howlmore après une série d'attaques de loups-garous. Un ou plusieurs mentent car ils sont secrètement des loups-garous. Un autre villageois, vous a-t-on dit, est un complice payé par les loups-garous pour mentir.\n\nPouvez-vous trouver qui est un loup-garou, qui est un villageois honnête, et qui est le complice qui ment ?",
+    "shareButton": "Partager ce puzzle",
+    "newGameButton": "Nouvelle partie",
+    "successMessage": "🎉 Vous avez résolu l'affaire ! Félicitations ! 🎉"
+  },
+  "errors": {
+    "noWerewolf": "Nous savons qu'au moins un villageois est un loup-garou. Cliquez sur les personnages pour changer vos suspicions.",
+    "noShill": "Nous savons qu'un villageois doit être un complice.",
+    "tooManyShills": "Nous savons qu'exactement un villageois doit être un complice.",
+    "werewolfNotLying": "Vous suspectez {name} d'être un loup-garou, mais selon vos autres suspicions, il ne ment pas.",
+    "shillNotLying": "Vous suspectez {name} d'être un complice, mais selon vos autres suspicions, il ne ment pas.",
+    "truthfulLying": "Vous avez marqué {name} comme véridique, mais sa déclaration contredit le reste de vos suspicions."
+  },
+  "suspicions": {
+    "truthful": "Véridique",
+    "werewolf": "Loup-garou",
+    "shill": "Complice"
+  },
+  "statements": {
+    "ifAThenB": "{bName} a toujours été sous le charme de {aName}. Si {aName} est un loup-garou, alors {bName} aussi.",
+    "bothOrNeither": "{aName} et {bName} sont inséparables. Soit les deux sont des loups, soit aucun ne l'est.",
+    "atLeastOne": "Au moins l'un de {aName} et {bName} est un loup : mon Timmy allait les rencontrer la nuit où il a été dévoré.",
+    "exactlyOne": "{aName} et {bName} se détestent si férocement qu'il est clair que l'un est un loup et l'autre non.",
+    "atMostOne": "{aName} et {bName} sont si différents ! Il est clair qu'ils ne peuvent pas tous les deux être des loups.",
+    "ifNotAThenB": "J'ai vu {bName} rôder autour de {aName} une fois. Si {aName} n'est pas un loup, alors {bName} est un loup.",
+    "neither": "Je connais {aName} et {bName} très bien, et aucun d'eux n'est un loup.",
+    "countWerewolves": {
+      "exactly": {
+        "singular": "J'ai compté les empreintes de pattes ! Il y a exactement 1 loup parmi mes voisins.",
+        "plural": "J'ai compté les empreintes de pattes ! Il y a exactement {count} loups parmi mes voisins."
+      },
+      "atMost": {
+        "singular": "J'ai vu les loups, et il y en a au plus 1.",
+        "plural": "J'ai vu les loups, et il y en a au plus {count}."
+      },
+      "atLeast": {
+        "singular": "J'ai regardé les marques de morsure. Il y a au moins 1 loup parmi mes voisins.",
+        "plural": "J'ai regardé les marques de morsure. Il y a au moins {count} loups parmi mes voisins."
+      },
+      "even": "Les empreintes de pattes montrent que ces bêtes vont par paires. Il y a un nombre pair de loups parmi mes voisins.",
+      "odd": "Les loups chassent par paires mais j'en ai vu un seul ! Il y a un nombre impair de loups parmi mes voisins."
+    }
+  },
+  "modals": {
+    "share": {
+      "title": "Partager ce puzzle",
+      "copy": "Copier",
+      "copied": "Copié !",
+      "close": "Fermer"
+    },
+    "newGame": {
+      "title": "Commencer une Nouvelle Partie",
+      "villagers": {
+        "4": "4 villageois",
+        "5": "5 villageois",
+        "6": "6 villageois"
+      },
+      "start": "Commencer",
+      "cancel": "Annuler"
+    }
+  }
+}
+

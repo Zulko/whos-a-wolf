@@ -41,12 +41,14 @@ console.log(`Loaded ${puzzleCache[6].length} puzzles for 6 villagers`);
  */
 export function getRandomPuzzle(numVillagers) {
   const puzzles = puzzleCache[numVillagers];
-  
+
   if (!puzzles || puzzles.length === 0) {
-    console.warn(`No puzzles cached for ${numVillagers} villagers, using default`);
+    console.warn(
+      `No puzzles cached for ${numVillagers} villagers, using default`
+    );
     return DEFAULT_PUZZLE;
   }
-  
+
   const randomIndex = Math.floor(Math.random() * puzzles.length);
   return puzzles[randomIndex];
 }
@@ -100,12 +102,44 @@ export function loadRandomPuzzle(numVillagers) {
 }
 
 /**
+ * Get language parameter from URL query parameter or return null if not present.
+ * @returns {string|null} Language code ('en' or 'fr') or null if not in URL
+ */
+export function getLangFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  const langParam = params.get("lang");
+  // Return null if lang param is null, undefined, or empty string
+  if (!langParam || langParam.trim() === "") {
+    return null;
+  }
+  // Validate that it's a supported language
+  if (langParam === "en" || langParam === "fr") {
+    return langParam;
+  }
+  return null;
+}
+
+/**
+ * Update URL with new language parameter.
+ * @param {string} lang - Language code ('en' or 'fr')
+ */
+export function updateLangURL(lang) {
+  const url = new URL(window.location.href);
+  url.searchParams.set("lang", lang);
+  window.history.pushState({}, "", url);
+}
+
+/**
  * Update URL with new puzzle string.
  * @param {string} puzzleStr - Puzzle string to set in URL
  */
 export function updatePuzzleURL(puzzleStr) {
-  const url = new URL(window.location);
+  const url = new URL(window.location.href);
   url.searchParams.set("puzzle", puzzleStr);
+  // Preserve lang parameter if it exists
+  const currentLang = getLangFromURL();
+  if (currentLang) {
+    url.searchParams.set("lang", currentLang);
+  }
   window.history.pushState({}, "", url);
 }
-

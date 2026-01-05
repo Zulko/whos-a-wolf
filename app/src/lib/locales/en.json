@@ -1,0 +1,66 @@
+{
+  "app": {
+    "title": "Who's a Wolf ?",
+    "intro": "You've been sent to gather statements from the last villagers of Howlmore Town after a string of werewolf attacks. One or more are lying because they are secretly werewolves. One other villager, you were told, is a shill paid by the werewolves to lie.\n\nCan you find who's a werewolf, who's an honest villager, and who is the lying shill?",
+    "shareButton": "Share this puzzle",
+    "newGameButton": "New game",
+    "successMessage": "🎉 You solved the case! Congratulations! 🎉"
+  },
+  "errors": {
+    "noWerewolf": "We know that at least one of villager is a werewolf. Click on the characters to change your suspicions.",
+    "noShill": "We know that one villager must be a shill.",
+    "tooManyShills": "We know that exactly one villager must bea shill.",
+    "werewolfNotLying": "You suspect {name} of being a werewolf, yet according to your other suspicions, they are not lying.",
+    "shillNotLying": "You suspect {name} of being a shill, yet according to your other suspicions, they are not lying.",
+    "truthfulLying": "You marked {name} as truthful, yet their statement disagrees with the rest of your suspicions."
+  },
+  "suspicions": {
+    "truthful": "Truthful",
+    "werewolf": "Werewolf",
+    "shill": "Shill"
+  },
+  "statements": {
+    "ifAThenB": "{bName} has always been under {aName}'s spell. If {aName} is a werewolf, then so is {bName}.",
+    "bothOrNeither": "{aName} and {bName} are inseparable. Either both are wolves, or neither is.",
+    "atLeastOne": "At least one of {aName} and {bName} is a wolf: my Timmy was going to meet them the night he was eaten.",
+    "exactlyOne": "{aName} and {bName} hate each other so ferociously, it is clear one is a wolf and the other isn't.",
+    "atMostOne": "{aName} and {bName} are so unalike! Clearly they couldn't both be wolves.",
+    "ifNotAThenB": "I have seen {bName} creeping on {aName} once. If {aName} is not a wolf, then {bName} is a wolf.",
+    "neither": "I know {aName} and {bName} very well, and neither of them is a wolf.",
+    "countWerewolves": {
+      "exactly": {
+        "singular": "I counted the pawprints! There is exactly 1 wolf among my neighbors.",
+        "plural": "I counted the pawprints! There are exactly {count} wolves among my neighbors."
+      },
+      "atMost": {
+        "singular": "I've seen the wolves, and there is at most 1 of them.",
+        "plural": "I've seen the wolves, and there are at most {count} of them."
+      },
+      "atLeast": {
+        "singular": "I looked at the bite marks. There is at least 1 wolf among my neighbors.",
+        "plural": "I looked at the bite marks. There are at least {count} wolves among my neighbors."
+      },
+      "even": "The pawprints show these beasts go by pair. There's an even number of wolves among my neighbors.",
+      "odd": "Wolves hunt by pair but I saw a lone one! There's an odd number of wolves among my neighbors."
+    }
+  },
+  "modals": {
+    "share": {
+      "title": "Share this puzzle",
+      "copy": "Copy",
+      "copied": "Copied!",
+      "close": "Close"
+    },
+    "newGame": {
+      "title": "Start a New Game",
+      "villagers": {
+        "4": "4 villagers",
+        "5": "5 villagers",
+        "6": "6 villagers"
+      },
+      "start": "Start",
+      "cancel": "Cancel"
+    }
+  }
+}
+

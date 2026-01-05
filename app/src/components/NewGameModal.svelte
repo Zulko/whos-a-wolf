@@ -1,4 +1,5 @@
 <script>
+  import { _ } from "svelte-i18n";
   import { loadRandomPuzzle, updatePuzzleURL, parsePuzzleFromString } from "../lib/puzzle.js";
 
   let { open = $bindable(false), onNewGame } = $props();
@@ -18,26 +19,26 @@
 </script>
 
 {#if open}
-  <div class="modal-overlay" on:click={handleCancel}>
-    <div class="modal-content" on:click={(e) => e.stopPropagation()}>
-      <h2>Start a New Game</h2>
+  <div class="modal-overlay" onclick={handleCancel} role="button" tabindex="0" onkeydown={(e) => e.key === 'Escape' && handleCancel()}>
+    <div class="modal-content" onclick={(e) => e.stopPropagation()}>
+      <h2>{$_("modals.newGame.title")}</h2>
       <div class="radio-group">
         <label>
           <input type="radio" value="4" bind:group={selectedCount} />
-          4 villagers
+          {$_("modals.newGame.villagers.4")}
         </label>
         <label>
           <input type="radio" value="5" bind:group={selectedCount} />
-          5 villagers
+          {$_("modals.newGame.villagers.5")}
         </label>
         <label>
           <input type="radio" value="6" bind:group={selectedCount} />
-          6 villagers
+          {$_("modals.newGame.villagers.6")}
         </label>
       </div>
       <div class="modal-buttons">
-        <button class="start-button" on:click={handleStart}>Start</button>
-        <button class="cancel-button" on:click={handleCancel}>Cancel</button>
+        <button class="start-button" onclick={handleStart}>{$_("modals.newGame.start")}</button>
+        <button class="cancel-button" onclick={handleCancel}>{$_("modals.newGame.cancel")}</button>
       </div>
     </div>
   </div>

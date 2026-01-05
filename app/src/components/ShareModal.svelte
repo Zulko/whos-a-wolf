@@ -1,4 +1,6 @@
 <script>
+  import { _ } from "svelte-i18n";
+
   let { open = $bindable(false) } = $props();
   let copied = $state(false);
   let shareUrl = $derived(window.location.href);
@@ -18,17 +20,17 @@
 </script>
 
 {#if open}
-  <div class="modal-overlay" on:click={handleCancel}>
-    <div class="modal-content" on:click={(e) => e.stopPropagation()}>
-      <h2>Share this puzzle</h2>
+  <div class="modal-overlay" onclick={handleCancel} role="button" tabindex="0" onkeydown={(e) => e.key === 'Escape' && handleCancel()}>
+    <div class="modal-content" onclick={(e) => e.stopPropagation()}>
+      <h2>{$_("modals.share.title")}</h2>
       <div class="url-container">
         <input type="text" readonly value={shareUrl} class="url-input" />
-        <button class="copy-button" on:click={handleCopy}>
-          {copied ? "Copied!" : "Copy"}
+        <button class="copy-button" onclick={handleCopy}>
+          {copied ? $_("modals.share.copied") : $_("modals.share.copy")}
         </button>
       </div>
       <div class="modal-buttons">
-        <button class="close-button" on:click={handleCancel}>Close</button>
+        <button class="close-button" onclick={handleCancel}>{$_("modals.share.close")}</button>
       </div>
     </div>
   </div>
