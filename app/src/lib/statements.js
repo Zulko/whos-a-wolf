@@ -175,7 +175,7 @@ class IfAThenB extends RelationshipStatement {
   }
 
   toFrench(names) {
-    return `${names[this.bIndex]} a toujours été sous le charme de ${
+    return `${names[this.bIndex]} a toujours été sous le l'influence de ${
       names[this.aIndex]
     }. Si ${names[this.aIndex]} est un loup-garou, alors ${
       names[this.bIndex]

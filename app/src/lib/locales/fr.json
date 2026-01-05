@@ -1,17 +1,17 @@
 {
   "app": {
     "title": "Loup es-tu?",
-    "intro": "Vous avez recueilli les déclarations des derniers villageois de Howlmore après une série d'attaques de loups-garous. Un ou plusieurs mentent car ils sont secrètement loups-garous. Et un autre villageois est un complice payé par les loups-garous pour mentir, avez-vous appris de source fiable.\n\nSaurez-vous déduire qui est un loup-garou, qui est un villageois honnête, et qui est le complice qui ment ?",
+    "intro": "Vous avez recueilli les déclarations des derniers villageois de Howlmore, après une série d'attaques de loups-garous. Un ou plusieurs mentent, car ils sont secrètement loups-garous. Et, d'après une source fiable, un autre villageois est un complice payé par les loups-garous pour mentir.\n\nSaurez-vous déduire qui est un loup-garou, qui est un villageois honnête, et qui est le complice menteur ?",
     "shareButton": "Partager ce puzzle",
     "newGameButton": "Nouvelle partie",
     "successMessage": "🎉 Vous avez résolu l'affaire ! Félicitations ! 🎉"
   },
   "errors": {
-    "noWerewolf": "Nous savons qu'au moins un villageois est un loup-garou. Cliquez sur les personnages pour changer vos suspicions.",
-    "noShill": "Nous savons qu'un villageois doit est le complice. Cliquez sur les personnages pour changer vos suspicions.",
-    "tooManyShills": "Nous savons qu'un villageois seulement est le complice.",
-    "werewolfNotLying": "Vous suspectez {name} d'être un loup-garou, mais selon vos autres suspicions, il ne ment pas.",
-    "shillNotLying": "Vous suspectez {name} d'être un complice, mais selon vos autres suspicions, sa declaration n'est pas mensongere.",
+    "noWerewolf": "Nous savons qu'au moins un villageois est un loup-garou. Cliquez sur les personnages pour modifier vos soupçons.",
+    "noShill": "Nous savons qu'un villageois doit être le complice. Cliquez sur les personnages pour modifier vos soupçons.",
+    "tooManyShills": "Nous savons qu'il n'y a qu'un seul complice.",
+    "werewolfNotLying": "Vous suspectez {name} d'être un loup-garou, mais selon vos autres soupçons, cette personne ne ment pas.",
+    "shillNotLying": "Vous suspectez {name} d'être un complice, mais selon vos autres soupçons, sa déclaration n'est pas mensongère.",
     "truthfulLying": "Vous avez marqué {name} comme honnête, mais sa déclaration contredit le reste de vos suspicions."
   },
   "suspicions": {
@@ -27,7 +27,7 @@
       "close": "Fermer"
     },
     "newGame": {
-      "title": "Commencer une Nouvelle Partie",
+      "title": "Commencer une nouvelle partie",
       "villagers": {
         "4": "4 villageois",
         "5": "5 villageois",
