@@ -62,6 +62,7 @@
     margin-top: 0;
     margin-bottom: 1rem;
     color: var(--text-color);
+    font-size: 1.3rem;
   }
 
   .url-container {
@@ -77,15 +78,15 @@
     border-radius: 4px;
     background-color: var(--bg-color, #0a0a0a);
     color: var(--text-color);
-    font-size: 0.9rem;
-    font-family: monospace;
+    font-size: 1.3rem;
+    font-family: inherit;
   }
 
   .copy-button {
     padding: 0.5rem 1.5rem;
     border: none;
     border-radius: 4px;
-    font-size: 1rem;
+    font-size: 1.3rem;
     cursor: pointer;
     background-color: #4caf50;
     color: white;
@@ -107,7 +108,7 @@
     padding: 0.5rem 1.5rem;
     border: none;
     border-radius: 4px;
-    font-size: 1rem;
+    font-size: 1.3rem;
     cursor: pointer;
     background-color: #666;
     color: white;

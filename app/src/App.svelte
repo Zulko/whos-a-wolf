@@ -274,7 +274,7 @@
     margin: 0 auto 2rem auto;
     line-height: 1.2rem;
     color: var(--text-secondary);
-    font-size: 1.35rem;
+    font-size: 1.3rem;
   }
 
   .villagers-grid {
@@ -300,7 +300,7 @@
     color: var(--error-text);
     margin-bottom: 1rem;
     font-weight: bold;
-    font-size: 1.35rem;
+    font-size: 1.3rem;
   }
 
   .success-message {
@@ -312,7 +312,7 @@
     color: var(--success-text);
     margin-bottom: 1rem;
     font-weight: bold;
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     animation: pulse 2s ease-in-out infinite;
   }
 
@@ -337,7 +337,7 @@
   .share-button,
   .new-game-button {
     padding: 0.75rem 2rem;
-    font-size: 1.1rem;
+    font-size: 1.3rem;
     color: white;
     border: none;
     border-radius: 8px;
@@ -377,7 +377,11 @@
     }
 
     .error-message {
-      font-size: 1rem;
+      font-size: 1.1rem;
+    }
+
+    .success-message {
+      font-size: 1.1rem;
     }
   }
 

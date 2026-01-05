@@ -71,10 +71,12 @@
     margin-top: 0;
     margin-bottom: 1rem;
     color: var(--text-color);
+    font-size: 1.3rem;
   }
 
   .radio-group label {
     color: var(--text-color);
+    font-size: 1.3rem;
   }
 
   .radio-group {
@@ -103,7 +105,7 @@
     padding: 0.5rem 1.5rem;
     border: none;
     border-radius: 4px;
-    font-size: 1rem;
+    font-size: 1.3rem;
     cursor: pointer;
   }
 
