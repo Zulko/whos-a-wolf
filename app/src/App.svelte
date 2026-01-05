@@ -9,11 +9,13 @@
   } from "./lib/puzzle.js";
   import VillagerCard from "./components/VillagerCard.svelte";
   import NewGameModal from "./components/NewGameModal.svelte";
+  import ShareModal from "./components/ShareModal.svelte";
 
   let numVillagers = $state(6);
   let statements = $state(new Map());
   let suspicions = $state(new Map());
   let showNewGameModal = $state(false);
+  let showShareModal = $state(false);
   let theme = $state("system"); // "light" | "dark" | "system"
 
   const characters = $derived(getDefaultCharacters(numVillagers));
@@ -93,6 +95,10 @@
 
   function openNewGameModal() {
     showNewGameModal = true;
+  }
+
+  function openShareModal() {
+    showShareModal = true;
   }
 
   function setTheme(newTheme) {
@@ -213,10 +219,16 @@
     </div>
   {/if}
 
-  <button class="new-game-button" onclick={openNewGameModal}>New game</button>
+  <div class="action-buttons">
+    <button class="share-button" onclick={openShareModal}
+      >Share this puzzle</button
+    >
+    <button class="new-game-button" onclick={openNewGameModal}>New game</button>
+  </div>
 </main>
 
 <NewGameModal bind:open={showNewGameModal} onNewGame={handleNewGame} />
+<ShareModal bind:open={showShareModal} />
 
 <footer class="theme-switcher">
   <button
@@ -314,17 +326,35 @@
     }
   }
 
-  .new-game-button {
-    display: block;
+  .action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
     margin: 2rem auto;
+    flex-wrap: wrap;
+  }
+
+  .share-button,
+  .new-game-button {
     padding: 0.75rem 2rem;
     font-size: 1.1rem;
-    background-color: #4caf50;
     color: white;
     border: none;
     border-radius: 8px;
     cursor: pointer;
     transition: background-color 0.2s;
+  }
+
+  .share-button {
+    background-color: #2196f3;
+  }
+
+  .share-button:hover {
+    background-color: #1976d2;
+  }
+
+  .new-game-button {
+    background-color: #4caf50;
   }
 
   .new-game-button:hover {
