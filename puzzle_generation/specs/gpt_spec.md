@@ -4,8 +4,8 @@
 
 You are sent to a village with **N villagers** (initially N=6). Each villager is either:
 
-- a **Human** (always tells the truth), or
-- a **Werewolf** (untrustful: **at least one thing they say is wrong**).
+- a **honest villager** (always tells the truth), or
+- a **werewolf\* (untrustful: **at least one thing they say is wrong\*\*).
 
 Each villager makes **k statements** (k is configurable per villager; typically 1–3). Each statement is a boolean statement about which villagers are werewolves (and possibly counts/parity constraints).
 
@@ -394,7 +394,7 @@ Then assignments consistent with speaker i are:
 So:
 
 - `compat_mask = (human_mask_by_speaker[i] & bundle_all_true_mask) |
-           (wolf_mask_by_speaker[i] & (~bundle_all_true_mask within N bits))`
+       (wolf_mask_by_speaker[i] & (~bundle_all_true_mask within N bits))`
 
 This enforces `AND(statements) == NOT(W[i])` for that speaker across all candidate assignments.
 

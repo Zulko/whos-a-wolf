@@ -36,7 +36,7 @@ class PuzzleRenderer:
             lines.append("Each villager is either a Human (always tells the truth),")
             lines.append("a Werewolf (at least one thing they say is wrong),")
             lines.append(
-                "or a Minion (not a werewolf, but at least one thing they say is wrong)."
+                "or a shill (not a werewolf, but at least one thing they say is wrong)."
             )
             lines.append("There is exactly one shill among the non-werewolves.")
         else:
@@ -86,16 +86,18 @@ class PuzzleRenderer:
         has_shill = puzzle.shill_assignment is not None
         if has_shill:
             lines.append(
-                "Each villager is either a **Human** (always tells the truth),"
+                "Each villager is either a **honest villager** (always tells the truth),"
             )
-            lines.append("a **Werewolf** (at least one thing they say is wrong),")
+            lines.append("a **werewolf* (at least one thing they say is wrong),")
             lines.append(
-                "or a **Minion** (not a werewolf, but at least one thing they say is wrong)."
+                "or a **shill** (not a werewolf, but at least one thing they say is wrong)."
             )
             lines.append("There is exactly one shill among the non-werewolves.")
         else:
-            lines.append("Each villager is either a **Human** (always tells the truth)")
-            lines.append("or a **Werewolf** (at least one thing they say is wrong).")
+            lines.append(
+                "Each villager is either a **honest villager** (always tells the truth)"
+            )
+            lines.append("or a **werewolf* (at least one thing they say is wrong).")
         lines.append("")
         lines.append("## Statements")
         lines.append("")

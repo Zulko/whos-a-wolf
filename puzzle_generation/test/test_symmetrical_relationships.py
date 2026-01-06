@@ -6,7 +6,6 @@ from src.statements import (
     ExactlyOne,
     Neither,
     IfAThenB,
-    IfNotAThenB,
 )
 from src.generator import build_statement_library
 from src.models import GenerationConfig
@@ -149,14 +148,14 @@ def test_generator_creates_no_duplicate_symmetrical_statements():
     ]
     non_symmetrical = [
         c for c in statements
-        if isinstance(c, (IfAThenB, IfNotAThenB))
+        if isinstance(c, IfAThenB)
     ]
     
     # For N=4, forbid_self_reference=True:
     # - Symmetrical: 4 classes * (4 choose 2) = 4 * 6 = 24
-    # - Non-symmetrical: 2 classes * (4 * 3) = 2 * 12 = 24
+    # - Non-symmetrical: 1 class * (4 * 3) = 12
     assert len(symmetrical) == 24, f"Expected 24 symmetrical statements, got {len(symmetrical)}"
-    assert len(non_symmetrical) == 24, f"Expected 24 non-symmetrical statements, got {len(non_symmetrical)}"
+    assert len(non_symmetrical) == 12, f"Expected 12 non-symmetrical statements, got {len(non_symmetrical)}"
     
     # Check for duplicates in symmetrical statements
     symmetrical_ids = [c.statement_id for c in symmetrical]
@@ -180,21 +179,19 @@ def test_generator_creates_all_ordered_pairs_for_non_symmetrical():
     
     non_symmetrical = [
         c for c in statements
-        if isinstance(c, (IfAThenB, IfNotAThenB))
+        if isinstance(c, IfAThenB)
     ]
     
     # For N=3, forbid_self_reference=True:
-    # - Non-symmetrical: 2 classes * (3 * 2) = 2 * 6 = 12
-    assert len(non_symmetrical) == 12
+    # - Non-symmetrical: 1 class * (3 * 2) = 6
+    assert len(non_symmetrical) == 6
     
     # Collect all ordered pairs
-    if_then_pairs = {(c.a_index, c.b_index) for c in non_symmetrical if isinstance(c, IfAThenB)}
-    if_not_then_pairs = {(c.a_index, c.b_index) for c in non_symmetrical if isinstance(c, IfNotAThenB)}
+    if_then_pairs = {(c.a_index, c.b_index) for c in non_symmetrical}
     
     # Should have all 6 ordered pairs (0,1), (0,2), (1,0), (1,2), (2,0), (2,1)
     expected_pairs = {(0, 1), (0, 2), (1, 0), (1, 2), (2, 0), (2, 1)}
     assert if_then_pairs == expected_pairs
-    assert if_not_then_pairs == expected_pairs
 
 
 def test_symmetrical_statements_evaluate_correctly():

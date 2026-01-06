@@ -76,7 +76,7 @@ def compute_shill_masks(N: int, M_star: tuple[bool, ...]) -> list[int]:
 
     Args:
         N: Number of villagers
-        M_star: Minion assignment tuple (M_star[i] = True means villager i is a shill)
+        M_star: shill assignment tuple (M_star[i] = True means villager i is a shill)
 
     Returns:
         List of length N, where mask[i] is a bitmask of assignments

@@ -300,7 +300,7 @@ def build_statement_library(config: GenerationConfig) -> list["Statement"]:
     ]
 
     # Non-symmetrical relationships: create for all ordered pairs
-    # Note: IfNotAThenB is excluded because it's logically equivalent to AtLeastOne
+    # Note: IfNotAThenB is intentionally excluded because it's logically equivalent to AtLeastOne
     # ((NOT W[a]) => W[b] ≡ W[a] OR W[b])
     non_symmetrical_classes = [
         IfAThenB,
@@ -328,17 +328,21 @@ def build_statement_library(config: GenerationConfig) -> list["Statement"]:
     if config.allow_count_statements:
         all_indices = tuple(range(N))
 
-        # Exactly K werewolves (for various K, minimum 1)
-        for k in range(1, N + 1):
+        # Exactly K werewolves (minimum 1, maximum N-2)
+        # Rationale: "exactly N-1" or "exactly N" is basically "everyone else is a werewolf",
+        # which tends to be too strong/obvious and not very interesting.
+        for k in range(1, N - 1):
             statements.append(ExactlyKWerewolves(all_indices, k))
 
         # At most K werewolves (k >= 2 to avoid equivalence with ExactlyK)
-        # Also exclude k=N since "at most N" is always true
-        for k in range(2, N):
+        # Also exclude k >= N-1 since "at most N-1" is close to "everyone else is a werewolf"
+        # and "at most N" is always true.
+        for k in range(2, N - 1):
             statements.append(AtMostKWerewolves(all_indices, k))
 
         # At least K werewolves (k <= N-1 to avoid equivalence with ExactlyK)
         # Also exclude k=0 since "at least 0" is always true
+        # Also exclude k=1 since "at least 1" is low-information / too obvious.
         for k in range(2, N):
             statements.append(AtLeastKWerewolves(all_indices, k))
 
@@ -351,8 +355,8 @@ def build_statement_library(config: GenerationConfig) -> list["Statement"]:
         for speaker in range(N):
             scope = tuple(i for i in range(N) if i != speaker)
             if len(scope) > 0:
-                # Exactly K in scope (minimum 1)
-                for k in range(1, len(scope) + 1):
+                # Exactly K in scope (minimum 1, maximum |scope|-2)
+                for k in range(1, len(scope) - 1):
                     statements.append(ExactlyKWerewolves(scope, k))
                 # Parity in scope (only for scope size > 4)
                 if len(scope) > 4:

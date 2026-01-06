@@ -170,7 +170,9 @@ def main() -> None:
             statements_by_speaker=puzzle.statements_by_speaker,
             difficulty_score=puzzle.difficulty_score,
             solution_assignment=None,
-            shill_assignment=None,
+            # Keep shill_assignment so the renderer can correctly describe the rules
+            # (shill/minion mode) while still not revealing the solution.
+            shill_assignment=puzzle.shill_assignment,
         )
 
     # Render puzzle

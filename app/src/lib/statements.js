@@ -390,17 +390,17 @@ class CountWerewolves extends CountStatement {
   toEnglish(names) {
     if (this._isParity) {
       if (this.count === "even") {
-        return "The pawprints show these beasts go by pair. There's an even number of wolves among my neighbors.";
+        return "The pawprints show these beasts go by pair. There's an even number of wolves among the other villagers.";
       } else {
-        return "Wolves hunt by pair but I saw a lone one! There's an odd number of wolves among my neighbors.";
+        return "Wolves hunt by pair but I saw a lone one! There's an odd number of wolves among my fellow villagers.";
       }
     } else {
       const isSingular = this.count === 1;
       if (this.comparison === "exactly") {
         if (isSingular) {
-          return "I counted the pawprints! There is exactly 1 wolf among my neighbors.";
+          return "I counted the pawprints! There is exactly 1 wolf among my fellow villagers.";
         } else {
-          return `I counted the pawprints! There are exactly ${this.count} wolves among my neighbors.`;
+          return `I counted the pawprints! There are exactly ${this.count} wolves among my fellow villagers.`;
         }
       } else if (this.comparison === "at_most") {
         if (isSingular) {
