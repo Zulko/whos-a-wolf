@@ -149,6 +149,8 @@
     height: 80px;
     cursor: pointer;
     transition: box-shadow 0.2s ease;
+    padding: 0;
+    margin: 0;
   }
 
   .villager-card:hover {
@@ -181,7 +183,7 @@
     height: 80px;
     border-radius: 0;
     overflow: hidden;
-    background-color: white;
+    background-color: var(--card-bg, #222);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -191,10 +193,11 @@
   }
 
   .villager-picture img {
-    width: 90%;
-    height: 90%;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
     display: block;
+    margin-left: -4px;
   }
 
   .placeholder {

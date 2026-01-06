@@ -148,10 +148,10 @@
     // Puzzles are already loaded and bundled in the app
     // Initialize from URL or select random puzzle
     let puzzleStr = getPuzzleFromURL();
-    let nVillagers = 6; // Default to 6 villagers
+    let nVillagers = 4; // Default to 4 villagers
 
     if (!puzzleStr) {
-      // No puzzle in URL, select a random one (default to 6 villagers)
+      // No puzzle in URL, select a random one (default to 4 villagers)
       puzzleStr = getRandomPuzzle(nVillagers);
       updatePuzzleURL(puzzleStr);
     } else {
@@ -182,7 +182,7 @@
     // Listen for URL changes (e.g., browser back/forward)
     window.addEventListener("popstate", () => {
       let newPuzzleStr = getPuzzleFromURL();
-      let newNVillagers = 6;
+      let newNVillagers = 4;
 
       if (!newPuzzleStr) {
         // No puzzle in URL, select a random one

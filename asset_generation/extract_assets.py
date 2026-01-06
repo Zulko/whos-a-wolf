@@ -15,13 +15,16 @@ from scipy import ndimage
 CHARACTER_NAMES = ["Alice", "Bob", "Charlie", "Doris", "Edith", "Frank"]
 
 # Paths
-ASSETS_DIR = Path(__file__).parent / "chatgpt_assets" / "new"
+ASSETS_DIR = Path(__file__).parent / "images"
 OUTPUT_DIR = Path(__file__).parent / "outputs"
 
 # Threshold for detecting black background (0-255)
 BLACK_THRESHOLD = 30
 # Threshold for detecting white borders to trim (0-255)
-WHITE_THRESHOLD = 230
+# Lower value = more aggressive trimming of light-colored borders
+WHITE_THRESHOLD = 150
+# Fixed margin to trim from each edge (in pixels) - for decorative borders
+TRIM_MARGIN = 12
 # Minimum area for a valid portrait region (to filter noise)
 MIN_REGION_AREA = 5000
 
@@ -95,8 +98,8 @@ def find_portrait_regions(img_array):
 
 def trim_white_border(img):
     """
-    Trim white borders from an image.
-    Scans from edges inward to find where content begins.
+    Trim borders from an image.
+    First applies a fixed margin trim, then finds bounding box of non-white pixels.
     """
     img_array = np.array(img)
     height, width = img_array.shape[:2]
@@ -104,46 +107,37 @@ def trim_white_border(img):
     if height == 0 or width == 0:
         return img
 
+    # First, apply fixed margin trim to remove decorative borders
+    margin = TRIM_MARGIN
+    if height > margin * 2 and width > margin * 2:
+        img = img.crop((margin, margin, width - margin, height - margin))
+        img_array = np.array(img)
+        height, width = img_array.shape[:2]
+
     # Convert to grayscale for analysis
     if len(img_array.shape) == 3:
         gray = np.mean(img_array[:, :, :3], axis=2)
     else:
         gray = img_array.astype(float)
 
-    # Find rows/columns that are mostly white (border)
-    def is_white_row(y):
-        return np.mean(gray[y, :]) >= WHITE_THRESHOLD
+    # Find all non-white pixels (content)
+    non_white_mask = gray < WHITE_THRESHOLD
 
-    def is_white_col(x):
-        return np.mean(gray[:, x]) >= WHITE_THRESHOLD
+    # Find bounding box of non-white pixels
+    rows_with_content = np.any(non_white_mask, axis=1)
+    cols_with_content = np.any(non_white_mask, axis=0)
 
-    # Find top border
-    top = 0
-    for y in range(height):
-        if not is_white_row(y):
-            top = y
-            break
+    if not np.any(rows_with_content) or not np.any(cols_with_content):
+        return img  # All white or empty, return as-is
 
-    # Find bottom border
-    bottom = height
-    for y in range(height - 1, -1, -1):
-        if not is_white_row(y):
-            bottom = y + 1
-            break
+    # Find first and last rows/cols with content
+    row_indices = np.where(rows_with_content)[0]
+    col_indices = np.where(cols_with_content)[0]
 
-    # Find left border
-    left = 0
-    for x in range(width):
-        if not is_white_col(x):
-            left = x
-            break
-
-    # Find right border
-    right = width
-    for x in range(width - 1, -1, -1):
-        if not is_white_col(x):
-            right = x + 1
-            break
+    top = row_indices[0]
+    bottom = row_indices[-1] + 1
+    left = col_indices[0]
+    right = col_indices[-1] + 1
 
     # Crop if valid
     if top < bottom and left < right:
