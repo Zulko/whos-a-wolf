@@ -14,7 +14,7 @@
   import NewGameModal from "./components/NewGameModal.svelte";
   import ShareModal from "./components/ShareModal.svelte";
 
-  let numVillagers = $state(6);
+  let numVillagers = $state(4);
   let statements = $state(new Map());
   let suspicions = $state(new Map());
   let showNewGameModal = $state(false);
