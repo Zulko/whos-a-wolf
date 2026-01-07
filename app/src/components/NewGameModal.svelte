@@ -2,8 +2,15 @@
   import { _ } from "svelte-i18n";
   import { loadRandomPuzzle, updatePuzzleURL, parsePuzzleFromString } from "../lib/puzzle.js";
 
-  let { open = $bindable(false), onNewGame } = $props();
-  let selectedCount = $state("6");
+  let { open = $bindable(false), onNewGame, currentVillagers = 4 } = $props();
+  let selectedCount = $state(String(currentVillagers));
+  
+  // Update selectedCount when modal opens or currentVillagers changes
+  $effect(() => {
+    if (open) {
+      selectedCount = String(currentVillagers);
+    }
+  });
 
   function handleStart() {
     const count = parseInt(selectedCount);
@@ -59,7 +66,7 @@
   }
 
   .modal-content {
-    background-color: var(--card-bg, #1a1a1a);
+    background-color: var(--bg-color, #1a1a1a);
     border: 2px solid var(--card-border, #444);
     border-radius: 8px;
     padding: 2rem;

@@ -280,7 +280,7 @@
   </main>
 {/if}
 
-<NewGameModal bind:open={showNewGameModal} onNewGame={handleNewGame} />
+<NewGameModal bind:open={showNewGameModal} onNewGame={handleNewGame} currentVillagers={numVillagers} />
 <ShareModal bind:open={showShareModal} />
 
 <footer class="theme-switcher">
@@ -347,12 +347,6 @@
     gap: 1rem;
     margin-bottom: 2rem;
     justify-items: center;
-  }
-
-  @media (min-width: 900px) {
-    .villagers-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
   }
 
   .error-message {
