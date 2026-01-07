@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=VT323&family=Press+Start+2P&display=block');
 
 :root {
   font-family: 'VT323', monospace;
@@ -36,6 +36,15 @@ body {
   color: var(--text-color);
   transition: background-color 0.3s ease, color 0.3s ease;
   overflow-x: hidden;
+}
+
+/* Hide content until fonts are loaded */
+body:not(.fonts-loaded) #app {
+  visibility: hidden;
+}
+
+body.fonts-loaded #app {
+  visibility: visible;
 }
 
 /* CSS Variables for theming */
