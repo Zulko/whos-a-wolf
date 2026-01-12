@@ -1,7 +1,7 @@
 {
   "app": {
     "title": "Who's a Wolf ?",
-    "intro": "You've been sent to gather statements from the last villagers of Howlmore Town after a series of werewolf attacks. One or more are lying because they are secretly werewolves. One other villager, you were told, is a shill paid by the werewolves to lie.\n\nCan you find who's a werewolf, who's an honest villager, and who is the lying shill?",
+    "intro": "You've been sent to gather statements from the last villagers of Howlmore Town after a series of werewolf attacks. One or more are lying because they are secretly werewolves. One other villager, you were told, is a shill paid by the werewolves to lie.\n\nCan you find out who's a werewolf, who's an honest villager, and who is the lying shill?",
     "shareButton": "Share this puzzle",
     "newGameButton": "New game",
     "successMessage": "🎉 You solved the case! Congratulations! 🎉"
