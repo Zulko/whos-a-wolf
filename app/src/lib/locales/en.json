@@ -7,7 +7,7 @@
     "successMessage": "🎉 You solved the case! Congratulations! 🎉"
   },
   "errors": {
-    "noWerewolf": "We know that at least one of villager is a werewolf. Click on the characters to change your suspicions.",
+    "noWerewolf": "We know that at least one villager is a werewolf. Click on the characters to change your suspicions.",
     "noShill": "We know that one villager must be a shill.",
     "tooManyShills": "We know that exactly one villager must bea shill.",
     "werewolfNotLying": "You suspect {name} of being a werewolf, yet according to your other suspicions, they are not lying.",

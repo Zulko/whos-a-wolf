@@ -510,7 +510,7 @@ class AtMostOne(RelationshipStatement):
         return z3.Not(z3.And(W_vars[self.a_index], W_vars[self.b_index]))
 
     def to_english(self, names: list[str]) -> str:
-        return f"{names[self.a_index]} and {names[self.b_index]} behave so differently, at most one of them is a werewolf."
+        return f"At most one of {names[self.a_index]} and {names[self.b_index]} is a werewolf."
 
     def complexity_cost(self) -> int:
         return 1
@@ -717,11 +717,17 @@ class CountWerewolves(CountStatement):
             count_val = self.count
             wolves_word = "werewolf" if count_val == 1 else "werewolves"
             if self.comparison == "exactly":
-                return f"Exactly {count_val} {wolves_word} among {scope_desc}."
+                return (
+                    f"There are exactly {count_val} {wolves_word} among {scope_desc}."
+                )
             elif self.comparison == "at_most":
-                return f"At most {count_val} {wolves_word} among {scope_desc}."
+                return (
+                    f"There are at most {count_val} {wolves_word} among {scope_desc}."
+                )
             else:  # at_least
-                return f"At least {count_val} {wolves_word} among {scope_desc}."
+                return (
+                    f"There are at least {count_val} {wolves_word} among {scope_desc}."
+                )
 
     def complexity_cost(self) -> int:
         if self._is_parity:
