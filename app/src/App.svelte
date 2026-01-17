@@ -320,6 +320,8 @@
     max-width: 1000px;
     margin: 0 auto;
     padding: 2rem;
+    overflow-x: hidden;
+    overflow-y: hidden;
   }
 
   h1 {
