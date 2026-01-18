@@ -20,8 +20,14 @@
 </script>
 
 {#if open}
-  <div class="modal-overlay" onclick={handleCancel} role="button" tabindex="0" onkeydown={(e) => e.key === 'Escape' && handleCancel()}>
-    <div class="modal-content" onclick={(e) => e.stopPropagation()}>
+  <div
+    class="modal-overlay"
+    onclick={(e) => e.target === e.currentTarget && handleCancel()}
+    role="button"
+    tabindex="0"
+    onkeydown={(e) => (e.key === "Escape" || e.key === "Enter" || e.key === " ") && handleCancel()}
+  >
+    <div class="modal-content" role="dialog" aria-modal="true" aria-label={$_("modals.share.title")}>
       <h2>{$_("modals.share.title")}</h2>
       <div class="url-container">
         <input type="text" readonly value={shareUrl} class="url-input" />

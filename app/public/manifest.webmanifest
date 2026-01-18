@@ -1,0 +1,20 @@
+{
+  "name": "Who's a Wolf",
+  "short_name": "Who's a Wolf",
+  "description": "A logic puzzle game.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#0b0b0b",
+  "theme_color": "#0b0b0b",
+  "icons": [
+    {
+      "src": "icon.jpg",
+      "sizes": "any",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "mobile-web-app-capable": "yes",
+  "apple-mobile-web-app-status-bar-style": "black"
+}

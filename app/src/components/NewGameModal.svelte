@@ -1,9 +1,11 @@
 <script>
   import { _ } from "svelte-i18n";
-  import { loadRandomPuzzle, updatePuzzleURL, parsePuzzleFromString } from "../lib/puzzle.js";
+  import { loadRandomPuzzle, updatePuzzleURL } from "../lib/puzzle.js";
 
   let { open = $bindable(false), onNewGame, currentVillagers = 4 } = $props();
-  let selectedCount = $state(String(currentVillagers));
+  // Don't initialize state from props directly (Svelte 5 warning).
+  // We'll sync it when the modal opens.
+  let selectedCount = $state("4");
   
   // Update selectedCount when modal opens or currentVillagers changes
   $effect(() => {
@@ -26,8 +28,14 @@
 </script>
 
 {#if open}
-  <div class="modal-overlay" onclick={handleCancel} role="button" tabindex="0" onkeydown={(e) => e.key === 'Escape' && handleCancel()}>
-    <div class="modal-content" onclick={(e) => e.stopPropagation()}>
+  <div
+    class="modal-overlay"
+    onclick={(e) => e.target === e.currentTarget && handleCancel()}
+    role="button"
+    tabindex="0"
+    onkeydown={(e) => (e.key === "Escape" || e.key === "Enter" || e.key === " ") && handleCancel()}
+  >
+    <div class="modal-content" role="dialog" aria-modal="true" aria-label={$_("modals.newGame.title")}>
       <h2>{$_("modals.newGame.title")}</h2>
       <div class="radio-group">
         <label>
