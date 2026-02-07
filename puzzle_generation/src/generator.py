@@ -1,4 +1,198 @@
-"""Puzzle generation using greedy bitmask-based algorithm."""
+"""Puzzle generation using greedy bitmask-based algorithm.
+
+================================================================================
+HOW PUZZLE GENERATION WORKS
+================================================================================
+
+This module generates "Who's a Wolf?" logic puzzles where players must deduce
+which villagers are werewolves based on their statements. The key constraint:
+humans always tell the truth, while werewolves (and optional shills) must lie.
+
+OVERVIEW
+--------
+The algorithm works backwards: we first pick who the werewolves are, then
+carefully construct statements that make this the ONLY logically valid solution.
+
+
+KEY TERMINOLOGY
+---------------
+
+W_star (W*) and M_star (M*)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The "star" notation (written as * in math, _star in code) comes from optimization
+literature where x* denotes the optimal or target solution. Here:
+
+  W_star: The TARGET werewolf assignment we want the puzzle to have as its
+          unique solution. It's a tuple of N booleans where W_star[i] = True
+          means villager i is a werewolf.
+
+          Example for 4 villagers: W_star = (True, False, True, False)
+          means villagers 0 and 2 are werewolves, villagers 1 and 3 are humans.
+
+  M_star: The TARGET shill assignment (only used when shills are enabled).
+          A shill is a human who lies (perhaps they've been bribed or threatened).
+          Exactly one non-werewolf can be a shill. M_star[i] = True means
+          villager i is the shill.
+
+          Example: M_star = (False, True, False, False)
+          means villager 1 is the shill (and must not be a werewolf in W_star).
+
+The goal is to construct statements such that W_star (and M_star) is the ONLY
+assignment consistent with all the dialogue—this is what makes the puzzle solvable.
+
+What is a "Bundle"?
+~~~~~~~~~~~~~~~~~~~
+A BUNDLE is the collection of statements that one villager makes during their turn
+to speak. Each villager speaks exactly once and makes 1 or more statements.
+
+  Example bundle for Alice (villager 0):
+    [
+      AtLeastOne(1, 2),      # "At least one of Bob or Charlie is a wolf"
+      ExactlyKWerewolves(2)  # "There are exactly 2 werewolves total"
+    ]
+
+Why "bundle" instead of just "statement"? Because:
+  1. A villager may make multiple statements in one turn
+  2. The truthfulness rule applies to the bundle as a whole:
+     - Humans: ALL statements in their bundle must be true
+     - Wolves/Shills: AT LEAST ONE statement in their bundle must be false
+  3. We select bundles atomically during generation (not statement-by-statement)
+
+The bundle is the unit of assignment in the greedy algorithm.
+
+
+STEP-BY-STEP PROCESS
+--------------------
+
+1. CHOOSE TARGET SOLUTION (choose_target_assignment)
+   ─────────────────────────────────────────────────
+   Randomly select W_star and M_star respecting constraints (min/max werewolves).
+   This is what we want the puzzle's answer to be.
+
+2. BUILD STATEMENT LIBRARY (build_statement_library)
+   ──────────────────────────────────────────────────
+   Generate all possible statements villagers could make:
+
+   Relationship statements (about pairs of villagers):
+   - BothOrNeither(a, b): "a and b are both wolves, or neither is"
+   - AtLeastOne(a, b): "at least one of a, b is a wolf"
+   - AtMostOne(a, b): "at most one of a, b is a wolf"
+   - ExactlyOne(a, b): "exactly one of a, b is a wolf"
+   - Neither(a, b): "neither a nor b is a wolf"
+   - IfAThenB(a, b): "if a is a wolf, then b is too"
+
+   Count statements (about total werewolf count):
+   - ExactlyKWerewolves: "there are exactly K wolves"
+   - AtLeastKWerewolves: "there are at least K wolves"
+   - AtMostKWerewolves: "there are at most K wolves"
+   - EvenNumberOfWerewolves / OddNumberOfWerewolves
+
+3. GENERATE CANDIDATE BUNDLES (list_candidate_bundles_for_speaker)
+   ────────────────────────────────────────────────────────────────
+   For each villager, enumerate all valid bundles (combinations of statements):
+
+   - If villager is HUMAN in W_star: all statements in bundle must be TRUE
+   - If villager is WOLF or SHILL: at least one statement must be FALSE
+
+   Bundles are filtered to remove:
+   - Redundant statements (if A implies B, remove the weaker B)
+   - Contradictory pairs (wolves shouldn't be obviously caught lying)
+
+4. GREEDY ASSIGNMENT (greedy_assign_statements_until_unique)
+   ──────────────────────────────────────────────────────────
+   This is the heart of the algorithm. It's analogous to the WEIGHTED SET COVER
+   problem, a classic optimization problem.
+
+   THE SET COVER ANALOGY
+   ~~~~~~~~~~~~~~~~~~~~~
+   In Set Cover, you have:
+   - A universe U of elements to cover
+   - A collection of sets, each covering some elements
+   - Goal: pick fewest sets to cover all elements
+
+   In our puzzle generation:
+   - Universe U = all "wrong" assignments (every assignment except W_star)
+   - Each bundle "covers" (eliminates) some wrong assignments
+   - Goal: pick bundles that eliminate ALL wrong assignments
+
+   More precisely, when a speaker makes a bundle of statements, it creates a
+   constraint that rules out certain werewolf assignments. We want to pick
+   bundles that collectively rule out everything except W_star.
+
+   THE GREEDY HEURISTIC
+   ~~~~~~~~~~~~~~~~~~~~
+   Just like the classic greedy approximation for Set Cover, we repeatedly
+   pick the bundle that covers (eliminates) the most remaining elements:
+
+   ┌─────────────────────────────────────────────────────────────────────┐
+   │ remaining = all assignments except W_star   # what we need to cover │
+   │                                                                     │
+   │ while remaining is not empty:                                       │
+   │   best_bundle = None                                                │
+   │   best_coverage = 0                                                 │
+   │                                                                     │
+   │   for each unassigned speaker:                                      │
+   │     for each candidate bundle for that speaker:                     │
+   │       coverage = |remaining ∩ assignments_eliminated_by_bundle|     │
+   │       if coverage > best_coverage:                                  │
+   │         best_bundle = bundle                                        │
+   │         best_coverage = coverage                                    │
+   │                                                                     │
+   │   assign best_bundle to its speaker                                 │
+   │   remaining = remaining - assignments_eliminated_by_bundle          │
+   └─────────────────────────────────────────────────────────────────────┘
+
+   This greedy approach doesn't guarantee the minimum number of informative
+   statements, but it's fast and works well in practice. The randomness
+   parameter allows picking slightly suboptimal bundles for variety.
+
+   PHASE 2 - Fill Remaining Speakers:
+   Once all wrong assignments are eliminated (puzzle is uniquely solvable),
+   we still need to give bundles to any remaining speakers. Any bundle
+   consistent with W_star maintains uniqueness, so we pick randomly.
+
+   QUALITY FILTERS during assignment:
+   - diverse_statements: each bundle must use at least one new statement type
+   - coherent_statements: humans can't vouch for someone they accused elsewhere
+
+
+5. VERIFICATION (via solver.py)
+   ─────────────────────────────
+   Use Z3 SAT solver to confirm the puzzle has exactly one solution.
+   Compute difficulty score based on constraint complexity.
+
+
+BITMASK MECHANICS
+-----------------
+For N villagers, there are 2^N possible werewolf assignments.
+We represent sets of assignments as bitmasks for O(1) set operations.
+
+Example with N=4 (16 possible assignments, indexed 0-15):
+  - Assignment 0  = (F,F,F,F) = no werewolves     → bit 0
+  - Assignment 5  = (T,F,T,F) = villagers 0,2    → bit 5
+  - Assignment 15 = (T,T,T,T) = all werewolves   → bit 15
+
+  remaining_mask = 0b0000_0000_0010_0101  (binary)
+  means assignments 0, 2, and 5 are still possible.
+
+Each statement has a "truth mask"—which assignments make it evaluate to true.
+A speaker's bundle constrains which assignments are compatible based on
+whether they're human (all true) or wolf/shill (some false).
+
+Set operations become bitwise operations:
+  - Union:        A | B
+  - Intersection: A & B
+  - Difference:   A & ~B
+  - Count:        popcount(A)
+
+
+WHY THIS APPROACH?
+------------------
+- Bitmasks enable O(1) set operations (intersection, counting, elimination)
+- Greedy selection (like Set Cover) quickly narrows to unique solution
+- Working backwards from W_star guarantees the puzzle is solvable
+- Quality filters ensure good puzzles (no redundant clues, narrative variety)
+"""
 
 import random
 from itertools import combinations
