@@ -1,15 +1,50 @@
 <script>
-  import { _ } from "svelte-i18n";
+  import { _, locale } from "svelte-i18n";
 
-  let { open = $bindable(false) } = $props();
-  let copied = $state(false);
+  let { open = $bindable(false), characters = [], statements = new Map() } =
+    $props();
+  let urlCopied = $state(false);
+  let puzzleTextCopied = $state(false);
   let shareUrl = $derived(window.location.href);
 
-  function handleCopy() {
+  const puzzleShareText = $derived.by(() => {
+    const intro = $_("app.intro");
+    const names = characters.map((c) => c.shortName);
+    const lines = [intro];
+
+    for (const char of characters) {
+      const statement = statements.get(char.name);
+      if (!statement) continue;
+
+      const statementText =
+        $locale === "fr"
+          ? statement.toFrench(names)
+          : statement.toEnglish(names);
+
+      lines.push(
+        $_("modals.share.statementLine", {
+          values: { name: char.shortName, statement: statementText },
+        })
+      );
+    }
+
+    return lines.join("\n\n");
+  });
+
+  function handleCopyUrl() {
     navigator.clipboard.writeText(shareUrl).then(() => {
-      copied = true;
+      urlCopied = true;
       setTimeout(() => {
-        copied = false;
+        urlCopied = false;
+      }, 2000);
+    });
+  }
+
+  function handleCopyPuzzleText() {
+    navigator.clipboard.writeText(puzzleShareText).then(() => {
+      puzzleTextCopied = true;
+      setTimeout(() => {
+        puzzleTextCopied = false;
       }, 2000);
     });
   }
@@ -31,10 +66,15 @@
       <h2>{$_("modals.share.title")}</h2>
       <div class="url-container">
         <input type="text" readonly value={shareUrl} class="url-input" />
-        <button class="copy-button" onclick={handleCopy}>
-          {copied ? $_("modals.share.copied") : $_("modals.share.copy")}
+        <button class="copy-button" onclick={handleCopyUrl}>
+          {urlCopied ? $_("modals.share.copied") : $_("modals.share.copy")}
         </button>
       </div>
+      <button class="copy-puzzle-text-button" onclick={handleCopyPuzzleText}>
+        {puzzleTextCopied
+          ? $_("modals.share.copiedPuzzleText")
+          : $_("modals.share.copyPuzzleText")}
+      </button>
       <div class="modal-buttons">
         <button class="close-button" onclick={handleCancel}>{$_("modals.share.close")}</button>
       </div>
@@ -102,6 +142,23 @@
   }
 
   .copy-button:hover {
+    opacity: 0.8;
+  }
+
+  .copy-puzzle-text-button {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1.5rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 1.3rem;
+    cursor: pointer;
+    background-color: #2196f3;
+    color: white;
+    margin-bottom: 0.5rem;
+  }
+
+  .copy-puzzle-text-button:hover {
     opacity: 0.8;
   }
 

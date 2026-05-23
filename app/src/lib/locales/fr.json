@@ -24,6 +24,9 @@
       "title": "Partager ce puzzle",
       "copy": "Copier",
       "copied": "Copié !",
+      "copyPuzzleText": "Copier le texte de ce puzzle",
+      "copiedPuzzleText": "Texte du puzzle copié !",
+      "statementLine": "{name} a dit : « {statement} »",
       "close": "Fermer"
     },
     "newGame": {

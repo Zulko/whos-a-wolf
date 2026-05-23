@@ -281,7 +281,11 @@
 {/if}
 
 <NewGameModal bind:open={showNewGameModal} onNewGame={handleNewGame} currentVillagers={numVillagers} />
-<ShareModal bind:open={showShareModal} />
+<ShareModal
+  bind:open={showShareModal}
+  {characters}
+  {statements}
+/>
 
 <footer class="theme-switcher">
   <button
