@@ -273,7 +273,7 @@
     line-height: 1.1rem;
     font-size: 1.3rem;
     margin: 0;
-    margin-top: 0.5rem;
+    margin-top: 0.6rem;
     padding: 0;
     word-wrap: break-word;
     overflow-wrap: break-word;
