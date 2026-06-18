@@ -9,7 +9,7 @@ export default defineConfig({
     svelte(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.png", "icon.jpg", "images/**/*"],
+      includeAssets: ["favicon.png", "icon.jpg"],
       manifest: {
         name: "Who's a Wolf",
         short_name: "Who's a Wolf",
@@ -29,8 +29,18 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,jpg,png,svg,webmanifest}"],
+        globPatterns: ["**/*.{js,css,html,webmanifest}"],
         runtimeCaching: [
+          {
+            urlPattern: /\/images\/.*\.(jpg|png|svg)$/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "character-images",
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
           {
             // Google Fonts stylesheet
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
