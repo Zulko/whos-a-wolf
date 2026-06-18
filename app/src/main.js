@@ -1,7 +1,12 @@
 import { mount } from 'svelte'
+import { registerSW } from 'virtual:pwa-register'
 import './app.css'
 import App from './App.svelte'
 import { initI18n } from './lib/i18n.js'
+
+// Register the service worker for offline support / installability.
+// autoUpdate keeps the cached app in sync with new deployments.
+registerSW({ immediate: true })
 
 // Wait for fonts to load before mounting the app
 async function waitForFonts() {
