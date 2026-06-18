@@ -67,6 +67,9 @@
     return "#ffffff"; // White text for all labels
   }
 
+  /**
+   * @param {MouseEvent | KeyboardEvent} event
+   */
   function cycleSuspicion(event) {
     isPulsing = true;
     setTimeout(() => (isPulsing = false), 150);
@@ -78,7 +81,7 @@
       onSuspicionChange("truthful");
     }
     // Remove focus after clicking to avoid persistent selected state
-    if (event?.currentTarget) {
+    if (event.currentTarget instanceof HTMLElement) {
       event.currentTarget.blur();
     }
   }
@@ -148,6 +151,7 @@
     overflow: visible;
     height: 80px;
     cursor: pointer;
+    touch-action: manipulation;
     transition: box-shadow 0.2s ease;
     padding: 0;
     margin: 0;
