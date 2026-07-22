@@ -329,9 +329,10 @@
   }
 
   h1 {
-    font-family: "Press Start 2P", monospace;
-    font-size: 1.6rem;
+    font-family: inherit;
+    font-size: 2rem;
     font-weight: 400;
+    text-transform: uppercase;
     text-align: center;
     margin-bottom: 1rem;
     color: var(--text-color);
@@ -437,7 +438,7 @@
     }
 
     h1 {
-      font-size: 1.2rem;
+      font-size: 1.5rem;
     }
 
     .error-message {

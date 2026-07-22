@@ -14,10 +14,7 @@ async function waitForFonts() {
     try {
       await document.fonts.ready
       // Wait for specific fonts to be loaded
-      await Promise.all([
-        document.fonts.load('1em VT323'),
-        document.fonts.load('1em "Press Start 2P"')
-      ])
+      await document.fonts.load('1em VT323')
     } catch (error) {
       console.warn('Font loading error:', error)
       // Continue anyway after a short delay
